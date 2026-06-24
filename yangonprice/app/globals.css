@@ -1,0 +1,41 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Myanmar:wght@400;500;600;700&family=Inter:wght@500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #121A2B;
+  --panel: #1B2740;
+  --panel-raised: #212F4D;
+  --line: #2E3B59;
+  --ink: #EDEFF5;
+  --muted: #8C97B5;
+  --gold: #D9A24B;
+  --gold-soft: rgba(217, 162, 75, 0.14);
+  --good: #5FBE8C;
+  --good-soft: rgba(95, 190, 140, 0.14);
+  --bad: #E2645A;
+  --bad-soft: rgba(226, 100, 90, 0.14);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Inter', sans-serif;
+  line-height: 1.6;
+}
+
+.my {
+  font-family: 'Noto Sans Myanmar', sans-serif;
+  line-height: 1.8;
+}
+
+textarea {
+  resize: vertical;
+}
