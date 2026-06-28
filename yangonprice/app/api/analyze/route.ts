@@ -3,44 +3,31 @@ import { openaiClient, buildUserMessage } from '@/lib/openai'
 import { supabase } from '@/lib/supabase'
 import { SYSTEM_PROMPT } from '@/lib/systemPrompt'
 import { AnalysisResponse, ComparableRow } from '@/lib/types'
-
-// Set to "true" in .env to require Clerk auth for the analysis form
-const REQUIRE_AUTH_FOR_ANALYSIS = process.env.REQUIRE_AUTH_FOR_ANALYSIS === 'true'
+import { computePriceAnalysis } from '@/lib/priceUtils'
 
 export async function POST(req: NextRequest) {
-  // Auth gate — currently off for demo; flip REQUIRE_AUTH_FOR_ANALYSIS=true to enable
-  if (REQUIRE_AUTH_FOR_ANALYSIS) {
-    const { auth } = await import('@clerk/nextjs/server')
-    const { userId } = await auth()
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-  }
-
   let listingText: string
   try {
     const body = await req.json()
     listingText = (body.listing ?? '').trim()
   } catch {
-    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+    return NextResponse.json({ error: 'Unable to generate analysis. Please try again.' }, { status: 400 })
   }
 
   if (!listingText) {
-    return NextResponse.json({ error: 'Listing text is required' }, { status: 400 })
+    return NextResponse.json({ error: 'Please paste a property listing.' }, { status: 400 })
   }
 
-  // Fetch comparables from Supabase
+  // Fetch comparables
   let comparables: ComparableRow[] = []
   try {
     const { data, error } = await supabase
       .from('comparables')
       .select('*')
       .order('created_at', { ascending: false })
-    if (!error && data) {
-      comparables = data as ComparableRow[]
-    }
+    if (!error && data) comparables = data as ComparableRow[]
   } catch {
-    // Non-fatal: proceed with empty dataset; model will say comparison unavailable
+    // Non-fatal
   }
 
   // Call OpenAI
@@ -56,44 +43,37 @@ export async function POST(req: NextRequest) {
       temperature: 0.2,
     })
     rawJson = completion.choices[0].message.content ?? '{}'
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'OpenAI call failed'
-    return NextResponse.json({ error: message }, { status: 502 })
+  } catch {
+    return NextResponse.json(
+      { error: 'Unable to generate analysis. Please try again.' },
+      { status: 502 }
+    )
   }
 
   let parsed: Record<string, unknown>
   try {
     parsed = JSON.parse(rawJson)
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON from model' }, { status: 502 })
-  }
-
-  // Apply decision override: if local_authority has red flags, force AVOID
-  const internal = parsed._internal_actor_analysis as Record<string, Record<string, string>> | undefined
-  if (internal?.local_authority) {
-    const { rule_clarity, accountability } = internal.local_authority
-    const redFlagTerms = ['red flag', 'disputed', 'enforcement failure', 'invalid', 'forged', 'မမှန်', 'အငြင်းပွားမှု']
-    const hasRedFlag = redFlagTerms.some(
-      (t) =>
-        rule_clarity?.toLowerCase().includes(t) ||
-        accountability?.toLowerCase().includes(t),
+    return NextResponse.json(
+      { error: 'Unable to generate analysis. Please try again.' },
+      { status: 502 }
     )
-    if (hasRedFlag) {
-      parsed.decision = 'AVOID'
-    }
   }
 
-  // Strip internal actor analysis — never send to browser
-  delete parsed._internal_actor_analysis
+  // Compute position and delta_percent server-side from normalized per-sqft values
+  const modelPriceAnalysis = parsed.price_analysis as Record<string, number | null> | undefined
+  const userPerSqft = modelPriceAnalysis?.user_price_per_sqft_lakh ?? null
+  const marketPerSqft = modelPriceAnalysis?.market_average_per_sqft_lakh ?? null
+  const { position, delta_percent } = computePriceAnalysis(
+    typeof userPerSqft === 'number' ? userPerSqft : null,
+    typeof marketPerSqft === 'number' ? marketPerSqft : null,
+  )
 
-  // Clamp confidence to 0–100 integer
-  if (typeof parsed.confidence === 'number') {
-    // Handle 0–1 fraction from model
-    if (parsed.confidence > 0 && parsed.confidence <= 1) {
-      parsed.confidence = Math.round(parsed.confidence * 100)
-    } else {
-      parsed.confidence = Math.round(Math.min(100, Math.max(0, parsed.confidence)))
-    }
+  parsed.price_analysis = {
+    user_price_per_sqft_lakh: userPerSqft,
+    market_average_per_sqft_lakh: marketPerSqft,
+    position,
+    delta_percent,
   }
 
   const response = parsed as unknown as AnalysisResponse
@@ -103,15 +83,13 @@ export async function POST(req: NextRequest) {
     await supabase.from('analyses').insert({
       raw_input: listingText,
       decision: response.decision,
-      method_note: response.method_note,
-      property_summary: response.property_summary,
-      price_analysis: response.price_analysis,
-      considerations: response.considerations,
-      comparison: response.comparison,
-      risk_assessment: response.risk_assessment,
-      recommendation: response.recommendation,
+      property_summary: response.market_observations,
+      considerations: response.investment_potential_reasoning,
+      risk_assessment: response.potential_risks,
+      recommendation: response.suggested_next_steps,
       confidence: response.confidence,
       extracted_data: response.extracted_data,
+      price_analysis: response.price_analysis,
     })
   } catch {
     // Non-fatal

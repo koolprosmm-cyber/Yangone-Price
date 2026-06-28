@@ -1,15 +1,14 @@
-import { auth } from '@clerk/nextjs/server'
-import { clerkClient } from '@clerk/nextjs/server'
+import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { userId } = await auth()
-  if (!userId) redirect('/sign-in')
+  const cookieStore = cookies()
+  const session = cookieStore.get('admin_session')
+  const adminPassword = process.env.ADMIN_PASSWORD
 
-  const client = await clerkClient()
-  const user = await client.users.getUser(userId)
-  const role = (user.publicMetadata as { role?: string }).role
-  if (role !== 'admin') redirect('/')
+  if (!adminPassword || !session || session.value !== adminPassword) {
+    redirect('/admin-login')
+  }
 
   return <>{children}</>
 }

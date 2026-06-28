@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { UserButton } from '@clerk/nextjs'
 import AnalysisForm from '@/components/AnalysisForm'
 import AnalysisResult from '@/components/AnalysisResult'
 import { AnalysisResponse } from '@/lib/types'
@@ -12,103 +11,76 @@ export default function HomePage() {
 
   return (
     <>
-      <div
-        style={{
-          background: 'rgba(217,162,75,0.14)',
-          borderBottom: '1px solid rgba(217,162,75,0.35)',
-          color: '#E8C988',
-          fontSize: '0.82rem',
-          padding: '10px 24px',
-          textAlign: 'center',
-        }}
-      >
-        ⚠ <strong style={{ color: 'var(--gold)' }}>Demo</strong> — for review purposes. Analysis is AI-generated and not financial advice.
+      <div style={{ textAlign: 'center', padding: '18px 0 8px' }}>
+        <p style={{ margin: '0 0 2px', color: 'var(--ink)', fontSize: '0.9rem', fontWeight: 600 }}>AI-Generated Property Analysis &amp; Market Insights</p>
       </div>
 
-      <header style={{ padding: '40px 0 30px', textAlign: 'center' }}>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0 28px', marginBottom: -30 }}>
-          <UserButton afterSignOutUrl="/" />
-        </div>
-        <h1
-          style={{
-            margin: '0 0 6px',
-            fontSize: '2.2rem',
-            fontWeight: 800,
-            letterSpacing: '-0.01em',
-            color: 'var(--ink)',
-          }}
-        >
-          Yangon<span style={{ color: 'var(--gold)' }}>Price</span>
-        </h1>
-        <p style={{ margin: 0, color: 'var(--muted)', fontSize: '1rem' }}>
-          Property Market Advisor
-        </p>
-      </header>
-
-      <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 28px 70px' }}>
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'clamp(320px, 40%, 480px) 1fr',
-            gap: 26,
-            alignItems: 'start',
-          }}
-          className="two-col"
-        >
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '24px 28px 70px' }}>
+        <div className="two-col" style={{
+          display: 'grid',
+          gridTemplateColumns: 'clamp(320px, 38%, 460px) 1fr',
+          gap: 26,
+          alignItems: 'start',
+        }}>
           <AnalysisForm onResult={setResult} onLoading={setLoading} loading={loading} />
 
           {result ? (
-            <AnalysisResult result={result} />
+            <div>
+              <AnalysisResult result={result} />
+              <p style={{ fontSize: '0.78rem', color: 'var(--muted)', marginTop: 16, textAlign: 'center' }}>
+                AI-Generated Analysis — Not Financial, Legal, or Investment Advice
+              </p>
+            </div>
           ) : (
-            <div
-              style={{
-                background: 'var(--panel)',
-                border: '1px solid var(--line)',
-                borderRadius: 14,
-                padding: '28px 30px',
-                minHeight: 420,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
+            <div style={{
+              background: 'var(--panel)',
+              border: '1px solid var(--line)',
+              borderRadius: 14,
+              padding: '28px 30px',
+              minHeight: 460,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 16,
+            }}>
               {loading ? (
-                <div style={{ textAlign: 'center', color: 'var(--muted)' }}>
-                  <div
-                    style={{
-                      width: 36,
-                      height: 36,
-                      border: '3px solid var(--line)',
-                      borderTop: '3px solid var(--gold)',
-                      borderRadius: '50%',
-                      animation: 'spin 0.8s linear infinite',
-                      margin: '0 auto 16px',
-                    }}
-                  />
-                  <p className="my" style={{ margin: 0, fontSize: '0.95rem' }}>
+                <>
+                  <div style={{
+                    width: 40, height: 40,
+                    border: '3px solid var(--line)',
+                    borderTop: '3px solid var(--gold)',
+                    borderRadius: '50%',
+                    animation: 'spin 0.8s linear infinite',
+                  }} />
+                  <p className="my" style={{ margin: 0, color: 'var(--muted)', fontSize: '0.95rem' }}>
                     ခွဲခြမ်းစိတ်ဖြာနေသည်…
                   </p>
-                </div>
+                </>
               ) : (
-                <p style={{ color: 'var(--muted)', textAlign: 'center', fontSize: '0.95rem' }}>
-                  Paste a property listing on the left and click <strong>Get Advice</strong>.
-                </p>
+                <>
+                  <div style={{ fontSize: '2rem', opacity: 0.3 }}>🏢</div>
+                  <p style={{ color: 'var(--muted)', textAlign: 'center', fontSize: '0.95rem', margin: 0, maxWidth: 280 }}>
+                    Paste a property listing on the left and click <strong style={{ color: 'var(--ink)' }}>Analyze Property</strong> to get a full market intelligence report.
+                  </p>
+                </>
               )}
             </div>
           )}
         </div>
       </div>
 
-      <footer
-        style={{
-          textAlign: 'center',
-          padding: '30px 0',
-          color: 'var(--muted)',
-          fontSize: '0.78rem',
-          borderTop: '1px solid var(--line)',
-        }}
-      >
-        YangonPrice · AI-generated analysis · not financial advice
+      <footer style={{
+        textAlign: 'center',
+        padding: '24px 28px',
+        color: 'var(--muted)',
+        fontSize: '0.78rem',
+        borderTop: '1px solid var(--line)',
+        lineHeight: 1.7,
+        maxWidth: 700,
+        margin: '0 auto',
+      }}>
+        Property Market Advisor provides AI-generated property intelligence based on information supplied by users. Users should independently verify all information and consult qualified professionals before making financial, legal, or investment decisions.
       </footer>
 
       <style>{`

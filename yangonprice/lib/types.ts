@@ -1,36 +1,42 @@
 export interface ExtractedData {
-  location: string
   property_type: string
-  price_stated: string
-  area_stated: string
+  township: string
+  location: string
+  price_lakh: number | null
+  building_size_sqft: number | null
+  land_size: string
+  bedrooms: number | null
+  bathrooms: number | null
+  floors: number | null
+  amenities: string[]
+  special_features: string[]
   missing_fields_note: string
 }
 
 export interface PriceAnalysis {
-  user_price_total: string
-  user_price_per_sqft: string
-  market_average_per_sqft: string
+  user_price_per_sqft_lakh: number | null
+  market_average_per_sqft_lakh: number | null
+  // Computed server-side:
   position: 'BELOW' | 'AVERAGE' | 'ABOVE' | 'UNKNOWN'
-  explanation: string
-}
-
-export interface Comparison {
-  similar_properties_found: number
-  township_average_per_sqft: string
-  notes: string
+  delta_percent: number | null
 }
 
 export interface AnalysisResponse {
-  method_note: string
   extracted_data: ExtractedData
-  decision: 'BUY' | 'WAIT' | 'AVOID'
-  property_summary: string
   price_analysis: PriceAnalysis
-  considerations: string
-  comparison: Comparison
-  risk_assessment: string[]
-  recommendation: string
-  confidence: number
+  decision: 'BUY' | 'WAIT' | 'AVOID'
+  investment_potential: 'Strong Potential' | 'Moderate Potential' | 'Limited Potential'
+  investment_potential_reasoning: string
+  key_findings: string[]
+  market_observations: string
+  potential_strengths: string[]
+  potential_risks: string[]
+  missing_information: string[]
+  questions_to_verify: string[]
+  suggested_next_steps: string[]
+  confidence: 'High' | 'Medium' | 'Low'
+  confidence_explanation: string
+  method_note: string
 }
 
 export interface ComparableRow {
