@@ -1,5 +1,5 @@
 ﻿import { NextRequest, NextResponse } from 'next/server'
-import { getOpenAI } from '@/lib/openai'
+import { getOpenAI, FAST_MODEL } from '@/lib/openai'
 
 export const dynamic = 'force-dynamic'
 
@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
   try {
     const openai = getOpenAI()
     const completion = await openai.chat.completions.create({
-      model: 'meta-llama/llama-3.1-8b-instruct:free',
+      model: FAST_MODEL,
       response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: CLARIFY_PROMPT },
@@ -63,4 +63,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ is_complete: true, questions: [] })
   }
 }
+
 

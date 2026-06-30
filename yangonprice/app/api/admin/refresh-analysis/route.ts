@@ -1,6 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { getOpenAI, buildUserMessage } from '@/lib/openai'
+import { getOpenAI, MAIN_MODEL, buildUserMessage } from '@/lib/openai'
 import { SYSTEM_PROMPT } from '@/lib/systemPrompt'
 import { AnalysisResponse, ComparableRow, MarketDataRow } from '@/lib/types'
 import { computePriceAnalysis, sanitizeAnalysis } from '@/lib/priceUtils'
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
   let parsed: Record<string, unknown>
   try {
     const completion = await openai.chat.completions.create({
-      model: 'meta-llama/llama-3.3-70b-instruct',
+      model: MAIN_MODEL,
       response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
@@ -66,6 +66,7 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ success: true, analysis: result })
 }
+
 
 
 

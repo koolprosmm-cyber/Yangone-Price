@@ -1,5 +1,5 @@
 ﻿import { NextRequest, NextResponse } from 'next/server'
-import { openaiClient, buildUserMessage } from '@/lib/openai'
+import { openaiClient, MAIN_MODEL, buildUserMessage } from '@/lib/openai'
 import { supabase } from '@/lib/supabase'
 import { SYSTEM_PROMPT } from '@/lib/systemPrompt'
 import { SELLER_PROMPT } from '@/lib/sellerPrompt'
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
   let rawJson: string
   try {
     const completion = await openaiClient.chat.completions.create({
-      model: 'meta-llama/llama-3.3-70b-instruct',
+      model: MAIN_MODEL,
       response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: systemPrompt },
@@ -89,6 +89,7 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json(response)
 }
+
 
 
 

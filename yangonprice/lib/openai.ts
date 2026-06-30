@@ -1,6 +1,20 @@
 import OpenAI from 'openai'
 import { ComparableRow, MarketDataRow } from './types'
 
+// Primary model for analysis — set OPENROUTER_MODEL in Vercel env vars to switch
+// Examples:
+//   meta-llama/llama-3.3-70b-instruct        (default, free tier available)
+//   openai/gpt-4o-mini                        (fast, cheap)
+//   openai/gpt-4o                             (best quality)
+//   google/gemini-flash-1.5                   (fast, multimodal)
+//   google/gemini-pro-1.5                     (high quality)
+//   anthropic/claude-3-5-haiku                (fast)
+//   anthropic/claude-sonnet-4-5               (best quality)
+export const MAIN_MODEL = process.env.OPENROUTER_MODEL ?? 'meta-llama/llama-3.3-70b-instruct'
+
+// Fast model for clarify questions and chat — lightweight tasks
+export const FAST_MODEL = process.env.OPENROUTER_FAST_MODEL ?? 'meta-llama/llama-3.1-8b-instruct:free'
+
 let _client: OpenAI | null = null
 
 export function getOpenAI(): OpenAI {

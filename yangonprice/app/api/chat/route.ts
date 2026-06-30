@@ -1,5 +1,5 @@
 ﻿import { NextRequest, NextResponse } from 'next/server'
-import { getOpenAI } from '@/lib/openai'
+import { getOpenAI, FAST_MODEL } from '@/lib/openai'
 
 export const dynamic = 'force-dynamic'
 
@@ -45,7 +45,7 @@ ${reportContext}`
   try {
     const openai = getOpenAI()
     const completion = await openai.chat.completions.create({
-      model: 'meta-llama/llama-3.1-8b-instruct:free',
+      model: FAST_MODEL,
       messages: [
         { role: 'system', content: CHAT_SYSTEM },
         { role: 'user', content: contextBlock },
@@ -62,4 +62,5 @@ ${reportContext}`
     return NextResponse.json({ error: 'Unable to respond. Please try again.' }, { status: 502 })
   }
 }
+
 

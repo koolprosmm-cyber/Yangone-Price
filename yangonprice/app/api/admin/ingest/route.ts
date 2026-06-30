@@ -1,6 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { getOpenAI, buildUserMessage } from '@/lib/openai'
+import { getOpenAI, MAIN_MODEL, buildUserMessage } from '@/lib/openai'
 import { ADMIN_INGESTION_PROMPT } from '@/lib/adminIngestionPrompt'
 import { SYSTEM_PROMPT } from '@/lib/systemPrompt'
 import { AnalysisResponse, ComparableRow, MarketDataRow } from '@/lib/types'
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
   let extracted: Record<string, unknown>
   try {
     const completion = await openai.chat.completions.create({
-      model: 'meta-llama/llama-3.3-70b-instruct',
+      model: MAIN_MODEL,
       response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: ADMIN_INGESTION_PROMPT },
@@ -79,7 +79,7 @@ async function runAnalysis(recordId: string, rawContent: string) {
   } catch { }
 
   const completion = await openai.chat.completions.create({
-    model: 'meta-llama/llama-3.3-70b-instruct',
+    model: MAIN_MODEL,
     response_format: { type: 'json_object' },
     messages: [
       { role: 'system', content: SYSTEM_PROMPT },
@@ -104,6 +104,7 @@ async function runAnalysis(recordId: string, rawContent: string) {
     analysis_generated_at: new Date().toISOString(),
   }).eq('id', recordId)
 }
+
 
 
 
