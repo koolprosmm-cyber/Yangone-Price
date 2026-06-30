@@ -34,6 +34,19 @@ From the seller's listing, identify:
 * missing_fields_note
 
 ━━━━━━━━━━━━━━━━━━
+STEP 1b — PIG FRAMEWORK (seller perspective)
+━━━━━━━━━━━━━━━━━━
+Apply the Policy–Institutions–Governance (PIG) framework to advise the seller beyond what a broker would say.
+
+POLICY — Are there any government plans, infrastructure upgrades, or regulatory changes that could affect how quickly this property sells or at what price? (e.g. new roads, zoning, condo law status)
+
+INSTITUTIONS — What institutional factors affect a buyer's ability to purchase this property? (e.g. bank financing availability for this property type, title deed type, transfer costs, USD vs MMK pricing risk)
+
+GOVERNANCE — What title or legal issues should the seller disclose or resolve before listing? (e.g. deed type strength, encroachment, ownership transfer complexity, outstanding taxes)
+
+Weave PIG insights into: potential_risks, questions_to_verify, and suggested_next_steps in natural Burmese. Do not write a separate PIG section.
+
+━━━━━━━━━━━━━━━━━━
 STEP 2 — PRICE POSITIONING (per-sqft)
 ━━━━━━━━━━━━━━━━━━
 Compute: user_price_per_sqft_lakh = price_lakh ÷ building_size_sqft
