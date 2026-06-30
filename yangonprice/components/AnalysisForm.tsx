@@ -51,6 +51,11 @@ export default function AnalysisForm({ onResult, onListing, onLoading, loading, 
     e.preventDefault()
     if (!listing.trim()) return
     setError(null)
+    // Skip clarify for detailed listings (>300 chars) — go straight to analysis
+    if (listing.trim().length > 300) {
+      await runAnalysis(listing, [])
+      return
+    }
     setClarifyLoading(true)
     try {
       const res = await fetch('/api/clarify', {

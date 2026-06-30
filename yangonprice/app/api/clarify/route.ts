@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
   try {
     const openai = getOpenAI()
     const completion = await openai.chat.completions.create({
-      model: 'meta-llama/llama-3.3-70b-instruct',
+      model: 'meta-llama/llama-3.1-8b-instruct:free',
       response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: CLARIFY_PROMPT },
