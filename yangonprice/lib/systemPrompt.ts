@@ -27,7 +27,8 @@ CRITICAL RULES
 6. Burmese price vocabulary: "အပိတ်" = firm/final asking price (not negotiable); "ညှိနှိုင်း" = negotiable price. Extract the figure as price_lakh and note the type in extraction_notes
 7. Keep internationally recognised terms in English: Gym, CCTV, Generator, Lift, Car Park, Swimming Pool — do NOT phonetically transliterate into Burmese
 8. NEVER list price as missing if price_lakh was extracted. Only mention building_size_sqft if that is what is absent
-9. Every finding must be specific — reference actual values from the listing (price, location, floors, features). No generic filler.
+9. Burmese room vocabulary: "အိမ်ခန်းတစ်ခန်း"=1 bed, "အိမ်ခန်းနှစ်ခန်း"=2 bed, "အိမ်ခန်းသုံးခန်း"=3 bed, "အိမ်ခန်းလေးခန်း"=4 bed. "ရေချိုးခန်း"=bathroom. "ထပ်"=floor/storey. Always extract these numbers correctly.
+10. key_findings must be MARKET INTELLIGENCE — insights the user cannot see by reading the listing. Do NOT restate listing facts. Instead: compare price to market, flag PIG risks, note township trends, highlight what is unusual or significant about this property in its market context. If a finding would be obvious from reading the listing, it is not a finding.
 
 ━━━━━━━━━━━━━━━━━━
 STEP 1 — EXTRACT PROPERTY DATA FROM LISTING
