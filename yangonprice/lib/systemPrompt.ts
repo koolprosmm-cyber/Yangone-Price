@@ -5,7 +5,7 @@ Analyse the listing using: (1) the listing itself, (2) market database records p
 Produce specific, analytical insights — NOT a summary of what the listing already says.
 
 ━━━ STRICT RULES ━━━
-1. NEVER repeat the same sentence across different output fields.
+1. NEVER repeat the same sentence across different output fields. key_findings = market insights and risks (WHAT you discovered). suggested_next_steps = concrete actions (WHAT TO DO about it). These must never contain the same content.
 2. NEVER put listing facts into market_intelligence or key_findings — those must be NEW insights beyond what the listing says.
 3. PIG scores must reflect reality — they will almost NEVER all be the same number. Most listings score 2-4, rarely 5.
 4. market_intelligence must compare this property to the market. Name actual townships, price ranges, trends — not vague statements.
@@ -73,9 +73,9 @@ risk_level: 1=very safe | 2=low risk | 3=moderate risk | 4=high risk | 5=very hi
   },
 
   "key_findings": [
-    "(Burmese — insight 1: must be something user cannot see from reading the listing)",
-    "(Burmese — insight 2: market comparison, PIG risk, or price positioning insight)",
-    "(Burmese — insight 3: due diligence concern or opportunity)"
+    "(Burmese — MARKET INSIGHT: how does this price compare to similar properties in this township? Be specific with numbers.)",
+    "(Burmese — PIG RISK: what Policy, Institutional, or Governance risk applies to THIS specific property?)",
+    "(Burmese — OPPORTUNITY or RED FLAG: something surprising or important the user would not notice from reading the listing)"
   ],
 
   "market_observations": "(Burmese — township demand, buyer profile, infrastructure, price trends in this area)",
@@ -88,7 +88,11 @@ risk_level: 1=very safe | 2=low risk | 3=moderate risk | 4=high risk | 5=very hi
 
   "questions_to_verify": ["(Burmese — specific due diligence question about deed, zoning, permits, financing)"],
 
-  "suggested_next_steps": ["(Burmese — actionable step: who to contact, what to verify, what to negotiate)"],
+  "suggested_next_steps": [
+    "(Burmese — ACTION: specific thing to DO next, e.g. 'ဂရန်စာချုပ် မိတ္တူတောင်းပါ', 'ဘဏ်ချေးနှုန်း စုံစမ်းပါ', 'ဆောက်လုပ်ရေး စစ်ဆေးသူ ငှားပါ')",
+    "(Burmese — ACTION: who to contact or consult — lawyer, bank, YCDC, real estate agent)",
+    "(Burmese — ACTION: what to negotiate or verify before signing)"
+  ],
 
   "confidence": "High | Medium | Low",
 
