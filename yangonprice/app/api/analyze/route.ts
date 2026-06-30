@@ -34,6 +34,8 @@ export async function POST(req: NextRequest) {
 
   const systemPrompt = mode === 'seller' ? SELLER_PROMPT : SYSTEM_PROMPT
 
+  console.log('[analyze] comparables:', comparables.length, 'marketData:', marketData.length)
+
   let rawJson: string
   try {
     const completion = await openaiClient.chat.completions.create({
@@ -46,14 +48,16 @@ export async function POST(req: NextRequest) {
       temperature: 0,
     })
     rawJson = completion.choices[0].message.content ?? '{}'
-  } catch {
+  } catch (err) {
+    console.error('[analyze] Groq error:', err instanceof Error ? err.message : String(err))
     return NextResponse.json({ error: 'Unable to generate analysis. Please try again.' }, { status: 502 })
   }
 
   let parsed: Record<string, unknown>
   try {
     parsed = JSON.parse(rawJson)
-  } catch {
+  } catch (err) {
+    console.error('[analyze] JSON parse error:', err, 'raw:', rawJson?.slice(0, 200))
     return NextResponse.json({ error: 'Unable to generate analysis. Please try again.' }, { status: 502 })
   }
 
