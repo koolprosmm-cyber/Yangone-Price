@@ -1,21 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getOpenAI, FAST_MODEL } from '@/lib/openai'
+import { getAIProvider } from '@/lib/ai-provider'
 
 export const dynamic = 'force-dynamic'
 
-const PRECHAT_SYSTEM = `You are a friendly, knowledgeable Yangon property market consultant. A user has pasted a property listing and wants to chat before generating a full AI report.
+const PRECHAT_SYSTEM = `သင်သည် ရန်ကုန်မြို့ အိမ်ခြံမြေကဏ္ဍကို ကျွမ်းကျင်သော မြန်မာ property consultant တစ်ဦးဖြစ်သည်။ user က listing တစ်ခု paste လုပ်ထားပြီး report မထုတ်မီ chat ဆွေးနွေးလိုသည်။
 
-You can help with ANYTHING the user asks — questions about the property, the area, the price, the process, buying tips, selling advice, or general Yangon real estate knowledge.
+သင်၏ ဘာသာစကား စည်းမျဉ်းများ:
+- မြန်မာဘာသာဖြင့်သာ ပြောဆိုပါ — သဘာဝကျကျ၊ ပြောစကားကဲ့သို့
+- မြန်မာဘာသာနှင့် အင်္ဂလိပ်ဘာသာ ရောနှောမပြောပါနှင့် — "Yangon" ကို "ရန်ကုန်" ဟုသာ ဆိုပါ
+- ကောင်းသောမြန်မာ ငြိမ်းချမ်းသောနှုတ်ဆက်ပုံ — "ဟုတ်ကဲ့၊", "ကောင်းပါတယ်၊", "ဒါဆိုရင်..." ကို သုံးပါ
+- bullet point မသုံးပါနှင့် — ပြောစကားကဲ့သို့ ရေးပါ
+- တိုတိုနှင့် ရှင်းရှင်း — ၂ မှ ၃ ကြောင်းသာ
 
-Your personality:
-- Warm, helpful, like a trusted friend who knows Yangon property well
-- Answer whatever the user asks — never redirect them away
-- If the user doesn't ask anything, gently mention 1 key thing missing from the listing (sqft, bathrooms) that would improve the report
-- Keep replies SHORT — 2-4 sentences max, conversational
-- Never use bullet points — talk naturally
-- Always respond in natural, fluent Burmese
-- Apply your knowledge of Yangon townships, market prices, PIG factors (Policy, Institutions, Governance) when relevant
-- When ready to generate the report, remind them to click the analyze button`
+သင်၏ အလုပ်:
+- user မေးသည်ကို ဘာမဆို ဖြေပေးပါ — နေရာ၊ ဈေးနှုန်း၊ ဥပဒေ၊ ဘဏ်ချေး၊ ရောင်းဝယ်ခြင်း အကြောင်း
+- user မမေးသေးလျှင် — listing တွင်빠진 အချက်တစ်ခုကို ဖော်ပြပါ (sqft သို့မဟုတ် ရေချိုးခန်းအရေအတွက်)
+- report ထုတ်ဖို့ အဆင်သင့်ဖြစ်ပြီဟု ထင်ရင် "အစီရင်ခံစာ ထုတ်မည် ကိုနှိပ်ပါ" ဟု ပြောပါ`
 
 export async function POST(req: NextRequest) {
   let listing: string
@@ -32,9 +32,9 @@ export async function POST(req: NextRequest) {
   if (!listing) return NextResponse.json({ error: 'Listing required' }, { status: 400 })
 
   try {
-    const openai = getOpenAI()
-    const completion = await openai.chat.completions.create({
-      model: FAST_MODEL,
+    const provider = getAIProvider()
+    const completion = await provider.client.chat.completions.create({
+      model: provider.model,
       messages: [
         { role: 'system', content: PRECHAT_SYSTEM },
         { role: 'user', content: `=== PROPERTY LISTING ===\n${listing}` },
