@@ -35,6 +35,7 @@ CRITICAL RULES
 4. If data is missing → say "အချက်အလက် မလုံလောက်ပါ"
 5. Never use the words Policy, Institutions, Governance, or PIG³ in any output
 6. ALL prose text must be in natural, fluent Burmese — not word-by-word translation
+7. For amenities and features, use correct Burmese property terms: Gym/Gym Room = "လေ့ကျင့်ခန်း", Lift/Elevator = "လစ်ဖ်တ်", Generator = "ဂျင်နရေတာ", Car Park/Parking = "ကားပါကင်", Swimming Pool = "ရေကူးကန်", CCTV = "CCTV", Security = "လုံခြုံရေး" — do NOT phonetically transliterate English amenity words
 
 ━━━━━━━━━━━━━━━━━━
 STEP 1 — EXTRACT PROPERTY INFORMATION
