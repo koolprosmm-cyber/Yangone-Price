@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { getOpenAI, buildUserMessage } from '@/lib/openai'
 import { SYSTEM_PROMPT } from '@/lib/systemPrompt'
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
   let parsed: Record<string, unknown>
   try {
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
+      model: 'llama-3.3-70b-versatile',
       response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
@@ -61,3 +61,4 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ success: true, analysis: result })
 }
+

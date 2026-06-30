@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { getOpenAI } from '@/lib/openai'
 import { ADMIN_INGESTION_PROMPT } from '@/lib/adminIngestionPrompt'
 import { checkAdminAuth } from '@/lib/adminAuth'
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   try {
     const openai = getOpenAI()
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
+      model: 'llama-3.3-70b-versatile',
       response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: ADMIN_INGESTION_PROMPT },
@@ -42,3 +42,4 @@ export async function POST(req: NextRequest) {
     confidence_score: extracted.confidence_score ?? null,
   })
 }
+

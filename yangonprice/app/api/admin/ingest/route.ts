@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { getOpenAI, buildUserMessage } from '@/lib/openai'
 import { ADMIN_INGESTION_PROMPT } from '@/lib/adminIngestionPrompt'
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
   let extracted: Record<string, unknown>
   try {
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
+      model: 'llama-3.3-70b-versatile',
       response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: ADMIN_INGESTION_PROMPT },
@@ -74,7 +74,7 @@ async function runAnalysis(recordId: string, rawContent: string) {
   } catch { }
 
   const completion = await openai.chat.completions.create({
-    model: 'gpt-4o',
+    model: 'llama-3.3-70b-versatile',
     response_format: { type: 'json_object' },
     messages: [
       { role: 'system', content: SYSTEM_PROMPT },
@@ -99,3 +99,4 @@ async function runAnalysis(recordId: string, rawContent: string) {
     analysis_generated_at: new Date().toISOString(),
   }).eq('id', recordId)
 }
+
