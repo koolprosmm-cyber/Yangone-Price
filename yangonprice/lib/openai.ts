@@ -10,10 +10,10 @@ import { ComparableRow, MarketDataRow } from './types'
 //   google/gemini-pro-1.5                     (high quality)
 //   anthropic/claude-3-5-haiku                (fast)
 //   anthropic/claude-sonnet-4-5               (best quality)
-export const MAIN_MODEL = process.env.OPENROUTER_MODEL ?? 'meta-llama/llama-3.3-70b-instruct'
+export const MAIN_MODEL = process.env.OPENROUTER_MODEL ?? 'openai/gpt-4o-mini'
 
 // Fast model for clarify questions and chat — lightweight tasks
-export const FAST_MODEL = process.env.OPENROUTER_FAST_MODEL ?? 'meta-llama/llama-3.1-8b-instruct:free'
+export const FAST_MODEL = process.env.OPENROUTER_FAST_MODEL ?? 'openai/gpt-4o-mini'
 
 let _client: OpenAI | null = null
 

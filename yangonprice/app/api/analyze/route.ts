@@ -71,6 +71,13 @@ export async function POST(req: NextRequest) {
   parsed.price_analysis = { user_price_per_sqft_lakh: userPerSqft, market_average_per_sqft_lakh: marketPerSqft, position, delta_percent }
   parsed.mode = mode
 
+  // Override AI decision if it contradicts the price math
+  if (mode === 'buyer' && userPerSqft && marketPerSqft) {
+    if (position === 'ABOVE') parsed.decision = 'OVERPRICED'
+    else if (position === 'BELOW') parsed.decision = 'GOOD VALUE'
+    else parsed.decision = 'FAIR PRICE'
+  }
+
   const response = sanitizeAnalysis(parsed as unknown as AnalysisResponse)
 
   try {
