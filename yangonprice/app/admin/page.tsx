@@ -423,9 +423,14 @@ export default function AdminPage() {
                 </div>
               )}
 
-              {(!compExtracted.township || !compExtracted.property_type || compExtracted.price_total_lakhs == null || compExtracted.area_sqft == null) && (
+              {(!compExtracted.township || !compExtracted.property_type || compExtracted.price_total_lakhs == null) && (
                 <div style={{ marginBottom: 14, padding: '10px 14px', background: 'var(--bad-soft)', border: '1px solid rgba(226,100,90,0.3)', borderRadius: 8, fontSize: '0.83rem', color: 'var(--bad)' }}>
-                  ⚠ One or more required fields could not be extracted. Go back and check the listing text, or try a more detailed listing.
+                  ⚠ Township, property type, and price are required. Go back and check the listing text.
+                </div>
+              )}
+              {compExtracted.area_sqft == null && compExtracted.township && compExtracted.property_type && compExtracted.price_total_lakhs != null && (
+                <div style={{ marginBottom: 14, padding: '10px 14px', background: 'rgba(217,162,75,0.1)', border: '1px solid rgba(217,162,75,0.3)', borderRadius: 8, fontSize: '0.83rem', color: 'var(--gold)' }}>
+                  ℹ Area (sqft) not found — per-sqft rate will not be calculated. You can still save this comparable.
                 </div>
               )}
 
@@ -444,7 +449,7 @@ export default function AdminPage() {
                 </button>
                 <button
                   onClick={handleCompSave}
-                  disabled={compSaving || !compExtracted.township || !compExtracted.property_type || compExtracted.price_total_lakhs == null || compExtracted.area_sqft == null}
+                  disabled={compSaving || !compExtracted.township || !compExtracted.property_type || compExtracted.price_total_lakhs == null}
                   style={{
                     flex: 2, padding: '12px', borderRadius: 9, border: 'none',
                     background: compSaving ? 'rgba(217,162,75,0.35)' : 'linear-gradient(135deg, var(--gold), #C8893A)',

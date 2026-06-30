@@ -104,4 +104,4 @@ OUTPUT FORMAT — STRICT JSON ONLY
   "extraction_notes": ""
 }
 
-extraction_notes: brief English note on anything ambiguous, conflicting, or missing that an admin should be aware of.`
+extraction_notes: brief note in Burmese on anything ambiguous, conflicting, or missing that an admin should be aware of. If nothing notable, leave empty string.`
