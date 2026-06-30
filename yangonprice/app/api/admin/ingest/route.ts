@@ -72,7 +72,7 @@ async function runAnalysis(recordId: string, rawContent: string) {
   try {
     const [compRes, marketRes] = await Promise.all([
       supabase.from('comparables').select('*').order('created_at', { ascending: false }),
-      supabase.from('market_data').select('id,township,property_type,price_lakh,building_size_sqft,land_size,bedrooms,bathrooms,floors,extraction_notes,market_data_type').order('created_at', { ascending: false }).limit(50),
+      supabase.from('market_data').select('id,township,property_type,price_lakh,building_size_sqft,land_size,bedrooms,bathrooms,floors,extraction_notes,market_data_type').order('created_at', { ascending: false }).limit(20),
     ])
     if (compRes.data) comparables = compRes.data as ComparableRow[]
     if (marketRes.data) marketData = marketRes.data as MarketDataRow[]
@@ -104,5 +104,6 @@ async function runAnalysis(recordId: string, rawContent: string) {
     analysis_generated_at: new Date().toISOString(),
   }).eq('id', recordId)
 }
+
 
 

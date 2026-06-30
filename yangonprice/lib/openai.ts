@@ -36,18 +36,17 @@ ${comparables
   const marketSection =
     marketData.length === 0
       ? 'MARKET DATA: None available.'
-      : `MARKET DATA (admin-ingested property listings and market observations):
+      : `MARKET DATA (admin-ingested):
 ${marketData
   .map((m) => {
     const parts: string[] = []
-    if (m.township) parts.push(`Township: ${m.township}`)
-    if (m.property_type) parts.push(`Type: ${m.property_type}`)
-    if (m.price_lakh) parts.push(`Price: ${m.price_lakh} lakhs`)
-    if (m.building_size_sqft) parts.push(`Size: ${m.building_size_sqft} sqft`)
-    if (m.bedrooms) parts.push(`Beds: ${m.bedrooms}`)
-    if (m.floors) parts.push(`Floors: ${m.floors}`)
-    if (m.extraction_notes) parts.push(`Notes: ${m.extraction_notes}`)
-    return `- ${parts.join(' | ')}`
+    if (m.township) parts.push(m.township)
+    if (m.property_type) parts.push(m.property_type)
+    if (m.price_lakh) parts.push(`${m.price_lakh}L`)
+    if (m.building_size_sqft) parts.push(`${m.building_size_sqft}sqft`)
+    if (m.bedrooms) parts.push(`${m.bedrooms}BR`)
+    if (m.floors) parts.push(`${m.floors}F`)
+    return `- ${parts.join(', ')}`
   })
   .join('\n')}`
 
