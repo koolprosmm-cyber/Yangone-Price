@@ -4,7 +4,7 @@ import { getOpenAI, buildUserMessage } from '@/lib/openai'
 import { ADMIN_INGESTION_PROMPT } from '@/lib/adminIngestionPrompt'
 import { SYSTEM_PROMPT } from '@/lib/systemPrompt'
 import { AnalysisResponse, ComparableRow } from '@/lib/types'
-import { computePriceAnalysis } from '@/lib/priceUtils'
+import { computePriceAnalysis, sanitizeAnalysis } from '@/lib/priceUtils'
 import { checkAdminAuth } from '@/lib/adminAuth'
 
 export async function POST(req: NextRequest) {
@@ -90,7 +90,7 @@ async function runAnalysis(recordId: string, rawContent: string) {
   const { position, delta_percent } = computePriceAnalysis(userPerSqft, marketPerSqft)
   parsed.price_analysis = { user_price_per_sqft_lakh: userPerSqft, market_average_per_sqft_lakh: marketPerSqft, position, delta_percent }
 
-  const result = parsed as unknown as AnalysisResponse
+  const result = sanitizeAnalysis(parsed as unknown as AnalysisResponse)
 
   await supabase.from('market_data').update({
     analysis_json: result,

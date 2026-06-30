@@ -3,7 +3,7 @@ import { openaiClient, buildUserMessage } from '@/lib/openai'
 import { supabase } from '@/lib/supabase'
 import { SYSTEM_PROMPT } from '@/lib/systemPrompt'
 import { AnalysisResponse, ComparableRow } from '@/lib/types'
-import { computePriceAnalysis } from '@/lib/priceUtils'
+import { computePriceAnalysis, sanitizeAnalysis } from '@/lib/priceUtils'
 
 export async function POST(req: NextRequest) {
   let listingText: string
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
     delta_percent,
   }
 
-  const response = parsed as unknown as AnalysisResponse
+  const response = sanitizeAnalysis(parsed as unknown as AnalysisResponse)
 
   // Log to Supabase (non-fatal)
   try {
