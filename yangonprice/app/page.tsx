@@ -139,8 +139,8 @@ export default function HomePage() {
                   onClick={handleNewAnalysis}
                   style={{
                     width: '100%', marginBottom: 12, padding: '10px',
-                    background: 'var(--panel-raised)', border: '1px solid var(--line)',
-                    borderRadius: 9, color: 'var(--muted)', fontWeight: 600,
+                    background: 'var(--gold-soft)', border: '1px solid rgba(217,162,75,0.5)',
+                    borderRadius: 9, color: 'var(--gold)', fontWeight: 700,
                     fontSize: '0.88rem', cursor: 'pointer',
                   }}
                 >
