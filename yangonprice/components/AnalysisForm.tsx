@@ -93,6 +93,25 @@ export default function AnalysisForm({ onResult, onLoading, loading, defaultValu
         ))}
       </div>
 
+      {/* Seller mode — what you'll learn */}
+      {isSeller && (
+        <div style={{ marginBottom: 16, padding: '12px 14px', background: 'var(--panel-raised)', borderRadius: 10, border: '1px solid rgba(217,162,75,0.25)' }}>
+          <p className="my" style={{ fontSize: '0.72rem', color: 'var(--gold)', fontWeight: 700, margin: '0 0 8px', letterSpacing: '0.04em' }}>
+            AI မှ ဤမေးခွန်းများကို ဖြေပေးမည် —
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+            {[
+              '💰 ကျွန်ုပ်၏ ဈေးနှုန်း စျေးကွက်နှင့် ကိုက်ညီမှုရှိပါသလား?',
+              '📊 သင့်တင့်သော ဈေးနှုန်းအပိုင်းအခြား ဘယ်လောက်ဖြစ်သနည်း?',
+              '🔧 ရောင်းချမတင်မီ ဘာများ ပြင်ဆင်သင့်သနည်း?',
+              '⏱ ဤအိမ်သည် မည်မျှ မြန်မြန် ရောင်းထွက်နိုင်မည်နည်း?',
+            ].map((q, i) => (
+              <div key={i} className="my" style={{ fontSize: '0.82rem', color: 'var(--ink)', lineHeight: 1.7 }}>{q}</div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <p style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--muted)', margin: '0 0 14px', fontWeight: 700 }}>
         {isSeller ? 'Paste Your Property Listing' : 'Paste Property Listing'}
       </p>
