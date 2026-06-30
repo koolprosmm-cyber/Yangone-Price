@@ -17,6 +17,7 @@ The data may be incomplete, inconsistent, duplicated, or poorly formatted.
 ━━━━━━━━━━━━━━━━━━
 IMPORTANT RULES
 ━━━━━━━━━━━━━━━━━━
+* Burmese price vocabulary: "အပိတ်" = firm/final asking price (not negotiable); "ညှိနှိုင်း" = negotiable price. Extract the figure next to "အပိတ်" as price_lakh and note it is a firm price.
 * Never invent information.
 * Never guess missing values.
 * If information is unavailable, return null.

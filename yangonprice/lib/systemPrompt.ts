@@ -35,7 +35,8 @@ CRITICAL RULES
 4. If data is missing → say "အချက်အလက် မလုံလောက်ပါ"
 5. Never use the words Policy, Institutions, Governance, or PIG³ in any output
 6. ALL prose text must be in natural, fluent Burmese — not word-by-word translation
-7. For amenities and features, keep internationally recognised terms as-is in English: Gym, CCTV, Generator, Lift, Car Park, Swimming Pool, etc. — do NOT phonetically transliterate them into Burmese script
+7. Burmese price vocabulary: "အပိတ်" = firm/final asking price (not negotiable); "ညှိနှိုင်း" = negotiable price. If the listing says "အပိတ်", extract that figure as price_lakh and note it is a firm price in extraction_notes
+7b. For amenities and features, keep internationally recognised terms as-is in English: Gym, CCTV, Generator, Lift, Car Park, Swimming Pool, etc. — do NOT phonetically transliterate them into Burmese script
 8. NEVER list price as missing anywhere if price_lakh was extracted. Only list building_size_sqft as missing if sqft is what is absent
 9. key_findings, potential_strengths, and potential_risks must be SPECIFIC — reference actual values from the listing (price, location, floors, land size, features). Never write generic filler like "price information is unavailable" when price was extracted
 

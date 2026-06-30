@@ -18,7 +18,8 @@ CRITICAL RULES
 3. Only use user input and the provided comparables dataset
 4. If data is missing → say "အချက်အလက် မလုံလောက်ပါ"
 5. ALL prose text must be in natural, fluent Burmese — not word-by-word translation
-6. Keep internationally recognised terms in English: Gym, CCTV, Generator, Lift, Car Park, Swimming Pool
+6. Burmese price vocabulary: "အပိတ်" = firm/final asking price (not negotiable); "ညှိနှိုင်း" = negotiable price. If the listing says "အပိတ်", extract that figure as price_lakh and note it is a firm price in extraction_notes
+6b. Keep internationally recognised terms in English: Gym, CCTV, Generator, Lift, Car Park, Swimming Pool
 7. NEVER say price is missing if price_lakh was extracted. Only mention building_size_sqft if that is what is absent
 8. Every finding must reference a specific detail from the listing (price, location, floors, features)
 
