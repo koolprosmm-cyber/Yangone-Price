@@ -21,12 +21,36 @@ export interface PriceAnalysis {
   delta_percent: number | null
 }
 
+export interface PigScore {
+  property_completeness: number        // 1-5
+  property_completeness_reason: string
+  market_confidence: number            // 1-5
+  market_confidence_reason: string
+  investment_potential_score: number   // 1-5
+  investment_potential_reason: string
+  risk_level: number                   // 1-5 (5 = highest risk)
+  risk_level_reason: string
+}
+
+export interface EvidenceUsed {
+  from_listing: string[]
+  from_market_database: string[]
+  from_general_knowledge: string[]
+  from_ai_reasoning: string[]
+}
+
 export interface AnalysisResponse {
   extracted_data: ExtractedData
   price_analysis: PriceAnalysis
   decision: 'BUY' | 'WAIT' | 'AVOID' | 'COMPETITIVE' | 'OVERPRICED' | 'UNDERPRICED'
   mode?: 'buyer' | 'seller'
   investment_potential: 'Strong Potential' | 'Moderate Potential' | 'Limited Potential'
+  // Report sections
+  market_intelligence: string
+  property_intelligence: string
+  pig_score: PigScore
+  evidence_used: EvidenceUsed
+  // Legacy fields (kept for compatibility)
   investment_potential_reasoning: string
   key_findings: string[]
   market_observations: string

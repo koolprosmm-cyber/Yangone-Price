@@ -107,14 +107,32 @@ OUTPUT FORMAT — STRICT JSON — PROSE IN BURMESE
   },
   "decision": "COMPETITIVE | OVERPRICED | UNDERPRICED",
   "investment_potential": "Strong Potential | Moderate Potential | Limited Potential",
-  "investment_potential_reasoning": "(Burmese — overall sale outlook, how quickly property may sell)",
-  "key_findings": ["(Burmese — specific market facts relevant to this seller)"],
-  "market_observations": "(Burmese — township demand, buyer trends, comparable activity)",
-  "potential_strengths": ["(Burmese — what will attract buyers: location, features, price)"],
-  "potential_risks": ["(Burmese — what may deter buyers or require price negotiation)"],
-  "missing_information": ["(Burmese — info that would strengthen the listing)"],
-  "questions_to_verify": ["(Burmese — things seller should confirm before listing)"],
-  "suggested_next_steps": ["(Burmese — practical advice: pricing, presentation, documentation)"],
+  "market_intelligence": "(Burmese — buyer demand in this township, comparable listings, how this property is positioned vs market)",
+  "property_intelligence": "(Burmese — what makes this property attractive to buyers, what will deter them, PIG risks affecting saleability, pre-listing recommendations)",
+  "pig_score": {
+    "property_completeness": 3,
+    "property_completeness_reason": "(Burmese)",
+    "market_confidence": 3,
+    "market_confidence_reason": "(Burmese)",
+    "investment_potential_score": 3,
+    "investment_potential_reason": "(Burmese — sale attractiveness)",
+    "risk_level": 3,
+    "risk_level_reason": "(Burmese — risks affecting sale)"
+  },
+  "evidence_used": {
+    "from_listing": ["(facts from the submitted listing)"],
+    "from_market_database": ["(data from admin comparables — or 'No database records available')"],
+    "from_general_knowledge": ["(Yangon market knowledge applied)"],
+    "from_ai_reasoning": ["(analytical conclusions combining sources)"]
+  },
+  "investment_potential_reasoning": "(Burmese — overall sale outlook, likely time to sell, pricing recommendation)",
+  "key_findings": ["(Burmese — market intelligence insights the seller cannot see from their own listing)"],
+  "market_observations": "(Burmese — township buyer demand, recent activity, price trends)",
+  "potential_strengths": ["(Burmese — what will attract buyers)"],
+  "potential_risks": ["(Burmese — what may deter buyers or cause price negotiation)"],
+  "missing_information": ["(Burmese — info that would strengthen the listing or sale)"],
+  "questions_to_verify": ["(Burmese — things to confirm before listing: deed, zoning, encumbrances)"],
+  "suggested_next_steps": ["(Burmese — pricing strategy, presentation, documentation, timeline)"],
   "confidence": "High | Medium | Low",
   "confidence_explanation": "(Burmese)",
   "method_note": "(Burmese)"
@@ -125,4 +143,5 @@ LANGUAGE RULE
 ━━━━━━━━━━━━━━━━━━
 ALL prose fields in natural, fluent Burmese.
 decision, investment_potential, confidence stay in English for frontend logic.
-Numeric fields must be numbers or null.`
+Numeric fields must be numbers or null.
+pig_score values must be integers 1–5.`

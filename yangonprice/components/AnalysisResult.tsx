@@ -44,11 +44,24 @@ function BulletList({ items, color = 'var(--gold)' }: { items: string[]; color?:
   )
 }
 
+function Stars({ value, color }: { value: number; color: string }) {
+  const v = Math.max(1, Math.min(5, Math.round(value ?? 0)))
+  return (
+    <span style={{ fontSize: '1rem', letterSpacing: 2 }}>
+      {Array.from({ length: 5 }, (_, i) => (
+        <span key={i} style={{ color: i < v ? color : 'var(--line)' }}>★</span>
+      ))}
+    </span>
+  )
+}
+
 interface Props { result: AnalysisResponse }
 
 export default function AnalysisResult({ result }: Props) {
   const ex = result.extracted_data
   const isSeller = result.mode === 'seller'
+  const ps = result.pig_score
+  const eu = result.evidence_used
 
   return (
     <div style={{ background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 14, padding: '28px 30px' }}>
@@ -91,7 +104,7 @@ export default function AnalysisResult({ result }: Props) {
         )}
       </div>
 
-      {/* ── Decision + Investment Potential + Confidence ── */}
+      {/* ── Decision + Confidence ── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 22 }}>
         {result.decision && <DecisionPill decision={result.decision} />}
         {result.investment_potential && <DecisionPill potential={result.investment_potential} />}
@@ -123,7 +136,7 @@ export default function AnalysisResult({ result }: Props) {
               </div>
             ))}
             {result.price_analysis.position && result.price_analysis.position !== 'UNKNOWN' && (
-              <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ marginTop: 12 }}>
                 <span style={{
                   fontSize: '0.82rem', fontWeight: 700, padding: '5px 14px', borderRadius: 8,
                   background: result.price_analysis.position === 'ABOVE' ? 'var(--bad-soft)' : result.price_analysis.position === 'BELOW' ? 'var(--good-soft)' : 'var(--gold-soft)',
@@ -138,6 +151,51 @@ export default function AnalysisResult({ result }: Props) {
         </>
       )}
 
+      {/* ── Market Intelligence ── */}
+      {result.market_intelligence && (
+        <div style={{ marginBottom: 22 }}>
+          <SectionLabel>Market Intelligence</SectionLabel>
+          <div className="my" style={{ ...card, fontSize: '0.95rem', lineHeight: 1.9, marginBottom: 0 }}>
+            {result.market_intelligence}
+          </div>
+        </div>
+      )}
+
+      {/* ── Property Intelligence ── */}
+      {result.property_intelligence && (
+        <div style={{ marginBottom: 22 }}>
+          <SectionLabel>Property Intelligence</SectionLabel>
+          <div className="my" style={{ ...card, fontSize: '0.95rem', lineHeight: 1.9, marginBottom: 0 }}>
+            {result.property_intelligence}
+          </div>
+        </div>
+      )}
+
+      {/* ── PIG Score ── */}
+      {ps && (
+        <>
+          <SectionLabel>PIG Score</SectionLabel>
+          <div style={{ ...card }}>
+            {[
+              { label: 'Property Completeness', value: ps.property_completeness, reason: ps.property_completeness_reason, color: 'var(--gold)' },
+              { label: 'Market Confidence', value: ps.market_confidence, reason: ps.market_confidence_reason, color: 'var(--good)' },
+              { label: 'Investment Potential', value: ps.investment_potential_score, reason: ps.investment_potential_reason, color: 'var(--good)' },
+              { label: 'Risk Level', value: ps.risk_level, reason: ps.risk_level_reason, color: 'var(--bad)' },
+            ].map((row, i) => (
+              <div key={row.label} style={{ padding: '10px 0', borderTop: i === 0 ? 'none' : '1px solid var(--line)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--muted)', fontWeight: 600 }}>{row.label}</span>
+                  <Stars value={row.value} color={row.color} />
+                </div>
+                {row.reason && (
+                  <p className="my" style={{ margin: 0, fontSize: '0.82rem', color: 'var(--ink)', lineHeight: 1.7 }}>{row.reason}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
       {/* ── Key Findings ── */}
       {result.key_findings?.filter(Boolean).length > 0 && (
         <>
@@ -148,49 +206,66 @@ export default function AnalysisResult({ result }: Props) {
         </>
       )}
 
-      {/* ── Market Observations ── */}
-      {result.market_observations && (
-        <div style={{ marginBottom: 22 }}>
-          <SectionLabel>Market Observations</SectionLabel>
-          <p className="my" style={{ margin: 0, fontSize: '0.95rem', lineHeight: 1.9 }}>{result.market_observations}</p>
-        </div>
-      )}
-
-      {/* ── Potential Strengths ── */}
+      {/* ── Strengths & Risks ── */}
       {result.potential_strengths?.filter(Boolean).length > 0 && (
         <>
-          <SectionLabel>{isSeller ? 'Selling Points' : 'Potential Strengths'}</SectionLabel>
+          <SectionLabel>{isSeller ? 'Selling Points' : 'Strengths'}</SectionLabel>
           <div style={{ ...card, paddingTop: 10, paddingBottom: 10 }}>
             <BulletList items={result.potential_strengths} color="var(--good)" />
           </div>
         </>
       )}
 
-      {/* ── Potential Risks ── */}
       {result.potential_risks?.filter(Boolean).length > 0 && (
         <>
-          <SectionLabel>{isSeller ? 'Buyer Objections / Deal Risks' : 'Potential Risks or Considerations'}</SectionLabel>
+          <SectionLabel>{isSeller ? 'Buyer Objections / Deal Risks' : 'Risks & Considerations'}</SectionLabel>
           <div style={{ ...card, paddingTop: 10, paddingBottom: 10 }}>
             <BulletList items={result.potential_risks} color="var(--bad)" />
           </div>
         </>
       )}
 
-      {/* ── Investment Potential Reasoning ── */}
+      {/* ── Investment / Sale Potential ── */}
       {result.investment_potential_reasoning && (
         <div style={{ marginBottom: 22 }}>
-          <SectionLabel>{isSeller ? 'Sale Potential Assessment' : 'Investment Potential Assessment'}</SectionLabel>
+          <SectionLabel>{isSeller ? 'Sale Potential Assessment' : 'Investment Potential'}</SectionLabel>
           <div className="my" style={{
             background: result.investment_potential === 'Strong Potential' ? 'var(--good-soft)' : result.investment_potential === 'Limited Potential' ? 'var(--bad-soft)' : 'var(--gold-soft)',
             border: `1px solid ${result.investment_potential === 'Strong Potential' ? 'rgba(95,190,140,0.4)' : result.investment_potential === 'Limited Potential' ? 'rgba(226,100,90,0.4)' : 'rgba(217,162,75,0.4)'}`,
-            borderRadius: 10, padding: '16px 20px', fontSize: '0.95rem',
+            borderRadius: 10, padding: '16px 20px', fontSize: '0.95rem', lineHeight: 1.9,
           }}>
             {result.investment_potential_reasoning}
           </div>
         </div>
       )}
 
-      {/* ── Missing Information ── */}
+      {/* ── Evidence Used ── */}
+      {eu && (
+        <>
+          <SectionLabel>Evidence Used</SectionLabel>
+          <div style={card}>
+            {[
+              { label: '✓ User Listing', items: eu.from_listing, color: 'var(--good)' },
+              { label: '✓ Market Database', items: eu.from_market_database, color: 'var(--gold)' },
+              { label: '✓ General Property Knowledge', items: eu.from_general_knowledge, color: 'var(--muted)' },
+              { label: '✓ AI Analysis', items: eu.from_ai_reasoning, color: 'var(--muted)' },
+            ].filter(s => s.items?.filter(Boolean).length > 0).map((source, si) => (
+              <div key={source.label} style={{ marginBottom: si < 3 ? 14 : 0 }}>
+                <div style={{ fontSize: '0.78rem', fontWeight: 700, color: source.color, marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  {source.label}
+                </div>
+                {source.items.filter(Boolean).map((item, i) => (
+                  <p key={i} className="my" style={{ margin: '0 0 4px', fontSize: '0.85rem', color: 'var(--ink)', lineHeight: 1.7 }}>
+                    • {item}
+                  </p>
+                ))}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* ── Missing Info + Questions ── */}
       {result.missing_information?.filter(Boolean).length > 0 && (
         <>
           <SectionLabel>Missing Information</SectionLabel>
@@ -200,10 +275,9 @@ export default function AnalysisResult({ result }: Props) {
         </>
       )}
 
-      {/* ── Questions to Verify ── */}
       {result.questions_to_verify?.filter(Boolean).length > 0 && (
         <>
-          <SectionLabel>Questions to Verify</SectionLabel>
+          <SectionLabel>Questions Requiring Verification</SectionLabel>
           <div style={{ ...card, paddingTop: 10, paddingBottom: 10 }}>
             <BulletList items={result.questions_to_verify} color="var(--gold)" />
           </div>
@@ -220,16 +294,18 @@ export default function AnalysisResult({ result }: Props) {
         </>
       )}
 
-      {/* ── Confidence Explanation ── */}
+      {/* ── Confidence Statement ── */}
       {result.confidence_explanation && (
-        <p className="my" style={{ fontSize: '0.82rem', color: 'var(--muted)', margin: '0 0 16px', lineHeight: 1.7 }}>
-          {result.confidence_explanation}
-        </p>
+        <div style={{ marginBottom: 16, padding: '12px 16px', background: 'var(--panel-raised)', borderRadius: 10, border: '1px solid var(--line)' }}>
+          <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            Confidence Statement
+          </div>
+          <p className="my" style={{ margin: 0, fontSize: '0.85rem', color: 'var(--ink)', lineHeight: 1.7 }}>{result.confidence_explanation}</p>
+        </div>
       )}
 
-      {/* ── Method note ── */}
       {result.method_note && (
-        <p className="my" style={{ fontSize: '0.78rem', color: 'var(--muted)', margin: 0, lineHeight: 1.7 }}>
+        <p className="my" style={{ fontSize: '0.78rem', color: 'var(--muted)', margin: '0 0 16px', lineHeight: 1.7 }}>
           {result.method_note}
         </p>
       )}
