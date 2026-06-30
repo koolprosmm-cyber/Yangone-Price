@@ -4,7 +4,7 @@ import { buildUserMessage } from '@/lib/openai'
 import { supabase } from '@/lib/supabase'
 import { SYSTEM_PROMPT } from '@/lib/systemPrompt'
 import { SELLER_PROMPT } from '@/lib/sellerPrompt'
-import { AnalysisResponse } from '@/lib/types'
+import { AnalysisResponse, ComparableRow, MarketDataRow } from '@/lib/types'
 import { computePriceAnalysis, sanitizeAnalysis } from '@/lib/priceUtils'
 import { getRankedEvidence } from '@/lib/knowledge-retrieval'
 
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
   const typeGuess = guessPropertyType(listingText)
 
   // Get ranked evidence from knowledge base
-  let evidence = { comparables: [], marketData: [], kbVersion: 1, dataFreshnessSummary: 'No data' }
+  let evidence: { comparables: ComparableRow[]; marketData: MarketDataRow[]; kbVersion: number; dataFreshnessSummary: string } = { comparables: [], marketData: [], kbVersion: 1, dataFreshnessSummary: 'No data' }
   try {
     evidence = await getRankedEvidence(townshipGuess, typeGuess)
   } catch { }
