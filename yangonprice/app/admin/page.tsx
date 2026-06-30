@@ -89,8 +89,21 @@ interface IngestRecord {
   refreshing: boolean
 }
 
+interface BulkResult {
+  success: boolean
+  listing_preview: string
+  extracted?: Record<string, unknown>
+  error?: string
+}
+
 export default function AdminPage() {
-  const [tab, setTab] = useState<'ingest' | 'comparables'>('ingest')
+  const [tab, setTab] = useState<'ingest' | 'comparables' | 'bulk'>('ingest')
+
+  // Bulk ingestion state
+  const [bulkContent, setBulkContent] = useState('')
+  const [bulkLoading, setBulkLoading] = useState(false)
+  const [bulkResults, setBulkResults] = useState<BulkResult[] | null>(null)
+  const [bulkError, setBulkError] = useState<string | null>(null)
 
   // Ingestion state
   const [rawContent, setRawContent] = useState('')
@@ -222,7 +235,7 @@ export default function AdminPage() {
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
-        {(['ingest', 'comparables'] as const).map(t => (
+        {(['ingest', 'comparables', 'bulk'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)} style={{
             padding: '8px 20px', borderRadius: 8, border: '1px solid var(--line)',
             background: tab === t ? 'var(--gold-soft)' : 'var(--panel)',
@@ -463,6 +476,93 @@ export default function AdminPage() {
             </div>
           )}
         </>
+      )}
+
+      {/* ── BULK INGESTION TAB ── */}
+      {tab === 'bulk' && (
+        <div style={card}>
+          <p style={sectionLabel}>Bulk Market Data Ingestion</p>
+          <p style={{ fontSize: '0.83rem', color: 'var(--muted)', marginBottom: 16, lineHeight: 1.7 }}>
+            Paste multiple listings separated by <code style={{ background: 'var(--panel-raised)', padding: '1px 6px', borderRadius: 4 }}>---</code> on its own line. Max 20 listings per batch.
+          </p>
+
+          <textarea
+            value={bulkContent}
+            onChange={e => setBulkContent(e.target.value)}
+            placeholder={`Listing 1 text here...\n\n---\n\nListing 2 text here...\n\n---\n\nListing 3 text here...`}
+            rows={14}
+            style={{ ...inputStyle, minHeight: 280, fontFamily: 'monospace', fontSize: '0.85rem', lineHeight: 1.7 }}
+          />
+
+          {bulkError && (
+            <p style={{ color: 'var(--bad)', fontSize: '0.85rem', marginBottom: 12, padding: '10px 14px', background: 'var(--bad-soft)', borderRadius: 8 }}>
+              {bulkError}
+            </p>
+          )}
+
+          <button
+            onClick={async () => {
+              if (!bulkContent.trim() || bulkLoading) return
+              setBulkError(null)
+              setBulkResults(null)
+              setBulkLoading(true)
+              try {
+                const res = await fetch('/api/admin/bulk-ingest', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ raw_content: bulkContent }),
+                })
+                const data = await res.json()
+                if (!res.ok) { setBulkError(data.error ?? 'Failed'); return }
+                setBulkResults(data.results as BulkResult[])
+                setBulkContent('')
+              } catch {
+                setBulkError('Network error. Please try again.')
+              } finally {
+                setBulkLoading(false)
+              }
+            }}
+            disabled={bulkLoading || !bulkContent.trim()}
+            style={{
+              width: '100%', padding: '13px', borderRadius: 9, border: 'none',
+              background: bulkLoading || !bulkContent.trim() ? 'rgba(217,162,75,0.35)' : 'linear-gradient(135deg, var(--gold), #C8893A)',
+              color: '#1A2420', fontWeight: 700, fontSize: '0.95rem',
+              cursor: bulkLoading || !bulkContent.trim() ? 'not-allowed' : 'pointer',
+            }}
+          >
+            {bulkLoading ? 'Processing listings…' : '⚡ Bulk Ingest All'}
+          </button>
+
+          {/* Results */}
+          {bulkResults && (
+            <div style={{ marginTop: 20 }}>
+              <p style={{ fontSize: '0.8rem', color: 'var(--muted)', fontWeight: 700, marginBottom: 12 }}>
+                ✅ {bulkResults.filter(r => r.success).length} of {bulkResults.length} listings saved
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {bulkResults.map((r, i) => (
+                  <div key={i} style={{
+                    padding: '10px 14px', borderRadius: 8,
+                    background: r.success ? 'var(--good-soft)' : 'var(--bad-soft)',
+                    border: `1px solid ${r.success ? 'var(--good)' : 'var(--bad)'}`,
+                    fontSize: '0.83rem',
+                  }}>
+                    <span style={{ color: r.success ? 'var(--good)' : 'var(--bad)', fontWeight: 700, marginRight: 8 }}>
+                      {r.success ? '✓' : '✗'}
+                    </span>
+                    <span style={{ color: 'var(--ink)' }}>{r.listing_preview}…</span>
+                    {r.success && r.extracted && (
+                      <span style={{ color: 'var(--muted)', marginLeft: 8 }}>
+                        → {String(r.extracted.township ?? '?')} · {String(r.extracted.property_type ?? '?')} · {r.extracted.price_lakh != null ? `${r.extracted.price_lakh}L` : 'no price'}
+                      </span>
+                    )}
+                    {!r.success && <span style={{ color: 'var(--bad)', marginLeft: 8 }}>{r.error}</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       )}
     </div>
   )
