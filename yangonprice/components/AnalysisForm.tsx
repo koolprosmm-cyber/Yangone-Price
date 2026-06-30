@@ -4,7 +4,8 @@ import { useState, useEffect, useRef } from 'react'
 import { AnalysisResponse } from '@/lib/types'
 
 interface Props {
-  onResult: (result: AnalysisResponse) => void
+  onResult: (result: AnalysisResponse, listing?: string) => void
+  onListing?: (listing: string) => void
   onLoading: (loading: boolean) => void
   loading: boolean
   defaultValue?: string
@@ -20,7 +21,7 @@ const ANALYSIS_STEPS = [
 
 type FlowStep = 'paste' | 'clarify' | 'done'
 
-export default function AnalysisForm({ onResult, onLoading, loading, defaultValue, defaultMode }: Props) {
+export default function AnalysisForm({ onResult, onListing, onLoading, loading, defaultValue, defaultMode }: Props) {
   const [listing, setListing] = useState(defaultValue ?? '')
   const [mode, setMode] = useState<'buyer' | 'seller'>(defaultMode ?? 'buyer')
   const [error, setError] = useState<string | null>(null)
@@ -96,7 +97,8 @@ export default function AnalysisForm({ onResult, onLoading, loading, defaultValu
         setFlowStep('paste')
         return
       }
-      onResult(data as AnalysisResponse)
+      onListing?.(fullListing)
+      onResult(data as AnalysisResponse, fullListing)
     } catch {
       setError('Unable to generate analysis. Please try again.')
       setFlowStep('paste')

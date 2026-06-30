@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import AnalysisForm from '@/components/AnalysisForm'
 import AnalysisResult from '@/components/AnalysisResult'
+import ChatBox from '@/components/ChatBox'
 import { AnalysisResponse } from '@/lib/types'
 
 const HISTORY_KEY = 'yp_history'
@@ -44,6 +45,7 @@ const decisionColor: Record<string, string> = { BUY: 'var(--good)', WAIT: 'var(-
 
 export default function HomePage() {
   const [result, setResult] = useState<AnalysisResponse | null>(null)
+  const [currentListing, setCurrentListing] = useState('')
   const [loading, setLoading] = useState(false)
   const [history, setHistory] = useState<HistoryEntry[]>([])
 
@@ -54,8 +56,9 @@ export default function HomePage() {
     setHistory(loadHistory())
   }
 
-  function handleResult(r: AnalysisResponse) {
+  function handleResult(r: AnalysisResponse, listing?: string) {
     setResult(r)
+    if (listing) setCurrentListing(listing)
     saveToHistory(r)
     setHistory(loadHistory())
   }
@@ -72,7 +75,7 @@ export default function HomePage() {
         <div className="main-grid">
           {/* Left col */}
           <div>
-            <AnalysisForm onResult={handleResult} onLoading={setLoading} loading={loading} />
+            <AnalysisForm onResult={handleResult} onLoading={setLoading} loading={loading} onListing={setCurrentListing} />
 
             {/* History */}
             {history.length > 0 && (
@@ -129,6 +132,7 @@ export default function HomePage() {
             {result ? (
               <div>
                 <AnalysisResult result={result} />
+                <ChatBox listing={currentListing} result={result} />
                 <p style={{ fontSize: '0.75rem', color: 'var(--muted)', marginTop: 14, textAlign: 'center' }}>
                   AI-Generated Analysis — Not Financial, Legal, or Investment Advice
                 </p>
