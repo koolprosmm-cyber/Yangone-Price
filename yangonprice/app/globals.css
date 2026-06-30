@@ -39,3 +39,9 @@ body {
 textarea {
   resize: vertical;
 }
+
+/* Mobile global tweaks */
+@media (max-width: 600px) {
+  body { font-size: 15px; }
+  header h1 { font-size: 1.4rem !important; }
+}

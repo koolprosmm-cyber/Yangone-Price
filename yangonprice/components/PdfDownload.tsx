@@ -65,19 +65,21 @@ export default function PdfDownload({ result }: Props) {
   const pa = result.price_analysis
   const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })
 
-  const positionLabel: Record<string, string> = { ABOVE: 'Above Market', BELOW: 'Below Market', AVERAGE: 'At Market', UNKNOWN: '—' }
-  const decisionColor: Record<string, string> = { BUY: '#166534', WAIT: '#92400e', AVOID: '#991b1b' }
-  const decisionBg: Record<string, string> = { BUY: '#dcfce7', WAIT: '#fef9c3', AVOID: '#fee2e2' }
+  const decisionColor: Record<string, string> = { BUY: '#fff', WAIT: '#1a2420', AVOID: '#fff' }
+  const decisionBg: Record<string, string> = { BUY: '#16a34a', WAIT: '#D9A24B', AVOID: '#dc2626' }
+  const positionLabel: Record<string, string> = { ABOVE: 'Above Market ↑', BELOW: 'Below Market ↓', AVERAGE: 'At Market →', UNKNOWN: '—' }
+  const positionColor: Record<string, string> = { ABOVE: '#dc2626', BELOW: '#16a34a', AVERAGE: '#D9A24B', UNKNOWN: '#888' }
+  const confidenceBg: Record<string, string> = { High: '#dcfce7', Medium: '#fef9c3', Low: '#fee2e2' }
+  const confidenceColor: Record<string, string> = { High: '#166534', Medium: '#92400e', Low: '#991b1b' }
 
   return (
     <>
-      {/* Download button */}
       <button
         onClick={handleDownload}
         disabled={status === 'generating'}
         style={{
           display: 'flex', alignItems: 'center', gap: 8,
-          margin: '18px auto 0',
+          margin: '0 auto',
           background: status === 'generating' ? 'rgba(100,100,100,0.2)' : 'var(--panel-raised)',
           border: '1px solid var(--line)',
           color: status === 'done' ? 'var(--good)' : 'var(--ink)',
@@ -87,98 +89,214 @@ export default function PdfDownload({ result }: Props) {
         }}
       >
         {status === 'generating' ? '⏳ Generating PDF…'
-          : status === 'done' ? '✅ Report downloaded successfully'
+          : status === 'done' ? '✅ Downloaded'
           : status === 'error' ? '❌ Failed — try again'
           : '📄 Download Report'}
       </button>
 
-      {/* Hidden report template — captured by html2canvas */}
+      {/* Hidden report — captured by html2canvas */}
       <div style={{ position: 'fixed', left: '-9999px', top: 0 }}>
         <div ref={reportRef} style={{
           width: 794, background: '#fff', color: '#111',
-          fontFamily: 'Georgia, "Times New Roman", serif',
-          padding: '52px 60px', boxSizing: 'border-box',
+          fontFamily: '"Helvetica Neue", Arial, sans-serif',
+          boxSizing: 'border-box',
         }}>
-          {/* Header */}
-          <div style={{ borderBottom: '2px solid #111', paddingBottom: 16, marginBottom: 28 }}>
-            <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.5px' }}>YangonPrice</div>
-            <div style={{ fontSize: 13, color: '#555', marginTop: 3 }}>Property Market Advice Report</div>
-            <div style={{ fontSize: 11, color: '#888', marginTop: 6 }}>Generated: {today}</div>
+
+          {/* Header banner */}
+          <div style={{ background: '#121A2B', padding: '32px 48px 28px', color: '#fff' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-0.5px', color: '#fff' }}>
+                  Yangon<span style={{ color: '#D9A24B' }}>Price</span>
+                </div>
+                <div style={{ fontSize: 11, color: '#8C97B5', marginTop: 3, letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                  Property Market Intelligence Report
+                </div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: 11, color: '#8C97B5' }}>{today}</div>
+                {result.confidence && (
+                  <span style={{
+                    display: 'inline-block', marginTop: 6,
+                    fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 20,
+                    background: confidenceBg[result.confidence] ?? '#f3f4f6',
+                    color: confidenceColor[result.confidence] ?? '#333',
+                  }}>
+                    {result.confidence} Confidence
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Property title */}
+            <div style={{ marginTop: 20, paddingTop: 20, borderTop: '1px solid #2E3B59' }}>
+              <div style={{ fontSize: 17, fontWeight: 700, color: '#fff' }}>
+                {[ex?.township, ex?.property_type].filter(Boolean).join(' — ') || 'Property Analysis'}
+              </div>
+              {ex?.location && <div style={{ fontSize: 12, color: '#8C97B5', marginTop: 4 }}>{ex.location}</div>}
+            </div>
           </div>
 
-          {/* 1. Property Summary */}
-          <Section title="1. Property Summary">
-            <Grid rows={[
-              ['Township', ex?.township],
-              ['Property Type', ex?.property_type],
-              ['Location', ex?.location],
-              ['Price', ex?.price_lakh != null ? `${ex.price_lakh.toLocaleString()} Lakh` : null],
-              ['Land Size', ex?.land_size],
-              ['Building Size', ex?.building_size_sqft != null ? `${ex.building_size_sqft.toLocaleString()} sqft` : null],
-              ['Bedrooms', ex?.bedrooms?.toString()],
-              ['Bathrooms', ex?.bathrooms?.toString()],
-              ['Floors', ex?.floors?.toString()],
-            ]} />
-          </Section>
+          {/* Decision bar */}
+          {result.decision && (
+            <div style={{
+              background: decisionBg[result.decision] ?? '#f3f4f6',
+              padding: '14px 48px',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span style={{
+                  fontSize: 16, fontWeight: 800, letterSpacing: '0.05em',
+                  color: decisionColor[result.decision] ?? '#111',
+                }}>
+                  {result.decision}
+                </span>
+                {result.investment_potential && (
+                  <span style={{ fontSize: 12, color: decisionColor[result.decision] ?? '#333', opacity: 0.8 }}>
+                    · {result.investment_potential}
+                  </span>
+                )}
+              </div>
+              {pa?.position && pa.position !== 'UNKNOWN' && (
+                <span style={{ fontSize: 12, fontWeight: 700, color: positionColor[pa.position] ?? '#333' }}>
+                  {positionLabel[pa.position]}
+                  {pa.delta_percent != null && ` ${pa.delta_percent > 0 ? '+' : ''}${pa.delta_percent}%`}
+                </span>
+              )}
+            </div>
+          )}
 
-          {/* 2. Recommendation */}
-          <Section title="2. Recommendation">
-            {result.decision && (
-              <span style={{
-                display: 'inline-block', fontWeight: 800, fontSize: 15,
-                padding: '5px 18px', borderRadius: 4, marginBottom: 12,
-                background: decisionBg[result.decision] ?? '#f3f4f6',
-                color: decisionColor[result.decision] ?? '#111',
-              }}>
-                {result.decision}
-              </span>
+          <div style={{ padding: '32px 48px' }}>
+
+            {/* Property details */}
+            <Section title="Property Details">
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 24px' }}>
+                {[
+                  ['Township', ex?.township],
+                  ['Type', ex?.property_type],
+                  ['Price', ex?.price_lakh != null ? `${ex.price_lakh.toLocaleString()} Lakh` : null],
+                  ['Land Size', ex?.land_size],
+                  ['Building', ex?.building_size_sqft != null ? `${ex.building_size_sqft.toLocaleString()} sqft` : null],
+                  ['Bedrooms', ex?.bedrooms?.toString()],
+                  ['Bathrooms', ex?.bathrooms?.toString()],
+                  ['Floors', ex?.floors?.toString()],
+                ].filter(([, v]) => v).map(([label, value]) => (
+                  <div key={label as string} style={{ fontSize: 12, padding: '5px 0', borderBottom: '1px solid #f0f0f0' }}>
+                    <span style={{ color: '#888' }}>{label}  </span>
+                    <strong style={{ color: '#111' }}>{value}</strong>
+                  </div>
+                ))}
+              </div>
+              {ex?.amenities?.length > 0 && (
+                <div style={{ marginTop: 10, fontSize: 12 }}>
+                  <span style={{ color: '#888' }}>Amenities  </span>
+                  <span style={{ color: '#111' }}>{ex.amenities.join(', ')}</span>
+                </div>
+              )}
+            </Section>
+
+            {/* Price analysis */}
+            {pa && (pa.user_price_per_sqft_lakh != null || pa.market_average_per_sqft_lakh != null) && (
+              <Section title="Price Analysis">
+                <div style={{ display: 'flex', gap: 16 }}>
+                  {pa.user_price_per_sqft_lakh != null && (
+                    <div style={{ flex: 1, background: '#f8f9fa', borderRadius: 6, padding: '12px 16px', textAlign: 'center' }}>
+                      <div style={{ fontSize: 18, fontWeight: 800, color: '#111' }}>{pa.user_price_per_sqft_lakh.toFixed(2)}</div>
+                      <div style={{ fontSize: 10, color: '#888', marginTop: 3 }}>lakh / sqft (listing)</div>
+                    </div>
+                  )}
+                  {pa.market_average_per_sqft_lakh != null && (
+                    <div style={{ flex: 1, background: '#f8f9fa', borderRadius: 6, padding: '12px 16px', textAlign: 'center' }}>
+                      <div style={{ fontSize: 18, fontWeight: 800, color: '#111' }}>{pa.market_average_per_sqft_lakh.toFixed(2)}</div>
+                      <div style={{ fontSize: 10, color: '#888', marginTop: 3 }}>lakh / sqft (market avg)</div>
+                    </div>
+                  )}
+                  {pa.position && pa.position !== 'UNKNOWN' && (
+                    <div style={{ flex: 1, background: pa.position === 'BELOW' ? '#dcfce7' : pa.position === 'ABOVE' ? '#fee2e2' : '#fef9c3', borderRadius: 6, padding: '12px 16px', textAlign: 'center' }}>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: positionColor[pa.position] }}>
+                        {pa.delta_percent != null ? `${pa.delta_percent > 0 ? '+' : ''}${pa.delta_percent}%` : '—'}
+                      </div>
+                      <div style={{ fontSize: 10, color: positionColor[pa.position], marginTop: 3 }}>{positionLabel[pa.position]}</div>
+                    </div>
+                  )}
+                </div>
+              </Section>
             )}
+
+            {/* Investment reasoning */}
             {result.investment_potential_reasoning && (
-              <p style={{ fontSize: 12, lineHeight: 1.9, margin: '8px 0 0', color: '#222' }}>
-                {result.investment_potential_reasoning}
-              </p>
+              <Section title="Investment Assessment">
+                <p style={{ fontSize: 12, lineHeight: 1.9, margin: 0, color: '#222' }}>
+                  {result.investment_potential_reasoning}
+                </p>
+              </Section>
             )}
-          </Section>
 
-          {/* 3. Price Comparison */}
-          <Section title="3. Price Comparison">
-            <Grid rows={[
-              ['Your Price (per sqft)', pa?.user_price_per_sqft_lakh != null ? `${pa.user_price_per_sqft_lakh.toFixed(2)} lakh/sqft` : null],
-              ['Market Average (per sqft)', pa?.market_average_per_sqft_lakh != null ? `${pa.market_average_per_sqft_lakh.toFixed(2)} lakh/sqft` : null],
-              ['Market Position', pa?.position ? positionLabel[pa.position] : null],
-              ['Delta', pa?.delta_percent != null ? `${pa.delta_percent > 0 ? '+' : ''}${pa.delta_percent}%` : null],
-            ]} />
-          </Section>
+            {/* Two-column: strengths + risks */}
+            {(result.potential_strengths?.filter(Boolean).length > 0 || result.potential_risks?.filter(Boolean).length > 0) && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
+                {result.potential_strengths?.filter(Boolean).length > 0 && (
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#16a34a', marginBottom: 8, paddingBottom: 4, borderBottom: '1px solid #dcfce7' }}>
+                      Strengths
+                    </div>
+                    {result.potential_strengths.slice(0, 4).map((s, i) => (
+                      <div key={i} style={{ fontSize: 11, margin: '4px 0', lineHeight: 1.7, paddingLeft: 10, position: 'relative' }}>
+                        <span style={{ position: 'absolute', left: 0, color: '#16a34a' }}>▸</span>{s}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {result.potential_risks?.filter(Boolean).length > 0 && (
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#dc2626', marginBottom: 8, paddingBottom: 4, borderBottom: '1px solid #fee2e2' }}>
+                      Risks
+                    </div>
+                    {result.potential_risks.slice(0, 4).map((r, i) => (
+                      <div key={i} style={{ fontSize: 11, margin: '4px 0', lineHeight: 1.7, paddingLeft: 10, position: 'relative' }}>
+                        <span style={{ position: 'absolute', left: 0, color: '#dc2626' }}>▸</span>{r}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
-          {/* 4. Key Risks */}
-          {result.potential_risks?.filter(Boolean).length > 0 && (
-            <Section title="4. Key Risks">
-              {result.potential_risks.slice(0, 3).map((r, i) => (
-                <p key={i} style={{ fontSize: 12, margin: '4px 0', lineHeight: 1.7 }}>• {r}</p>
-              ))}
-            </Section>
-          )}
+            {/* Key findings */}
+            {result.key_findings?.filter(Boolean).length > 0 && (
+              <Section title="Key Findings">
+                {result.key_findings.slice(0, 5).map((f, i) => (
+                  <div key={i} style={{ fontSize: 12, margin: '5px 0', lineHeight: 1.8, display: 'flex', gap: 8 }}>
+                    <span style={{ color: '#D9A24B', flexShrink: 0 }}>●</span><span>{f}</span>
+                  </div>
+                ))}
+              </Section>
+            )}
 
-          {/* 5. Key Findings */}
-          {result.key_findings?.filter(Boolean).length > 0 && (
-            <Section title="5. Key Findings">
-              {result.key_findings.slice(0, 4).map((f, i) => (
-                <p key={i} style={{ fontSize: 12, margin: '4px 0', lineHeight: 1.7 }}>• {f}</p>
-              ))}
-            </Section>
-          )}
+            {/* Next steps */}
+            {result.suggested_next_steps?.filter(Boolean).length > 0 && (
+              <Section title="Suggested Next Steps">
+                {result.suggested_next_steps.slice(0, 4).map((s, i) => (
+                  <div key={i} style={{ fontSize: 12, margin: '5px 0', lineHeight: 1.8, display: 'flex', gap: 8 }}>
+                    <span style={{ color: '#555', flexShrink: 0 }}>{i + 1}.</span><span>{s}</span>
+                  </div>
+                ))}
+              </Section>
+            )}
 
-          {/* Final Note */}
-          <div style={{ marginTop: 32, padding: '14px 18px', background: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: 4 }}>
-            <p style={{ fontSize: 10.5, color: '#555', lineHeight: 1.8, margin: 0 }}>
-              This report is generated using publicly available property information and AI-assisted analysis. Users should independently verify ownership, legal status, engineering condition, and financial matters before making decisions.
-            </p>
+            {/* Disclaimer */}
+            <div style={{ marginTop: 16, padding: '12px 16px', background: '#f8f9fa', border: '1px solid #e5e7eb', borderRadius: 4 }}>
+              <p style={{ fontSize: 10, color: '#777', lineHeight: 1.8, margin: 0 }}>
+                This report is AI-generated using information provided by the user. It does not constitute financial, legal, or investment advice. Users should independently verify ownership, legal status, physical condition, and all financial matters before making any property decisions. YangonPrice is not liable for decisions made based on this report.
+              </p>
+            </div>
+
           </div>
 
           {/* Footer */}
-          <div style={{ borderTop: '1px solid #ddd', marginTop: 32, paddingTop: 14, textAlign: 'center' }}>
-            <div style={{ fontSize: 12, fontWeight: 700 }}>YangonPrice</div>
-            <div style={{ fontSize: 10, color: '#888', marginTop: 3 }}>Property Market Advice System — For informational purposes only.</div>
+          <div style={{ background: '#121A2B', padding: '14px 48px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#D9A24B' }}>YangonPrice</div>
+            <div style={{ fontSize: 10, color: '#8C97B5' }}>AI-Generated · For informational purposes only · {today}</div>
           </div>
         </div>
       </div>
@@ -189,26 +307,10 @@ export default function PdfDownload({ result }: Props) {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: 24 }}>
-      <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#555', marginBottom: 10, borderBottom: '1px solid #e5e7eb', paddingBottom: 6 }}>
+      <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#888', marginBottom: 10, paddingBottom: 5, borderBottom: '1px solid #e5e7eb' }}>
         {title}
       </div>
       {children}
     </div>
-  )
-}
-
-function Grid({ rows }: { rows: [string, string | null | undefined][] }) {
-  const filtered = rows.filter(([, v]) => v)
-  return (
-    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-      <tbody>
-        {filtered.map(([label, value]) => (
-          <tr key={label}>
-            <td style={{ color: '#666', padding: '4px 0', width: '40%', verticalAlign: 'top' }}>{label}</td>
-            <td style={{ color: '#111', fontWeight: 600, padding: '4px 0', verticalAlign: 'top' }}>{value}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
   )
 }

@@ -36,6 +36,8 @@ CRITICAL RULES
 5. Never use the words Policy, Institutions, Governance, or PIG³ in any output
 6. ALL prose text must be in natural, fluent Burmese — not word-by-word translation
 7. For amenities and features, keep internationally recognised terms as-is in English: Gym, CCTV, Generator, Lift, Car Park, Swimming Pool, etc. — do NOT phonetically transliterate them into Burmese script
+8. NEVER list price as missing in key_findings or missing_information if price_lakh was successfully extracted. Only flag building_size_sqft as missing if that is what prevents the per-sqft calculation
+9. key_findings, potential_strengths, and potential_risks must be SPECIFIC to this listing — reference actual values: the exact price, location, floor count, land size, features mentioned. Never write generic statements like "price information is unavailable" when price was extracted. Each finding must reference at least one concrete detail from the listing
 
 ━━━━━━━━━━━━━━━━━━
 STEP 1 — EXTRACT PROPERTY INFORMATION
