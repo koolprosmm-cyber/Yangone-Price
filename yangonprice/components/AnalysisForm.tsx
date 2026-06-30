@@ -19,7 +19,12 @@ const ANALYSIS_STEPS = [
   'Generating recommendations',
 ]
 
-type FlowStep = 'paste' | 'clarify' | 'done'
+type FlowStep = 'paste' | 'chat' | 'done'
+
+interface ChatMessage {
+  role: 'user' | 'assistant'
+  content: string
+}
 
 export default function AnalysisForm({ onResult, onListing, onLoading, loading, defaultValue, defaultMode }: Props) {
   const [listing, setListing] = useState(defaultValue ?? '')
@@ -27,10 +32,11 @@ export default function AnalysisForm({ onResult, onListing, onLoading, loading, 
   const [error, setError] = useState<string | null>(null)
   const [animStep, setAnimStep] = useState(-1)
   const [flowStep, setFlowStep] = useState<FlowStep>('paste')
-  const [clarifyLoading, setClarifyLoading] = useState(false)
-  const [questions, setQuestions] = useState<string[]>([])
-  const [answers, setAnswers] = useState<string[]>([])
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
+  const [chatInput, setChatInput] = useState('')
+  const [chatLoading, setChatLoading] = useState(false)
   const chatBottomRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
     if (!loading) { setAnimStep(-1); return }
@@ -45,51 +51,77 @@ export default function AnalysisForm({ onResult, onListing, onLoading, loading, 
 
   useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [questions, answers])
+  }, [chatMessages, chatLoading])
 
   async function handleContinue(e: React.FormEvent) {
     e.preventDefault()
     if (!listing.trim()) return
     setError(null)
-    // Skip clarify for detailed listings (>300 chars) — go straight to analysis
-    if (listing.trim().length > 300) {
-      await runAnalysis(listing, [])
-      return
-    }
-    setClarifyLoading(true)
+    setFlowStep('chat')
+    setChatMessages([])
+    setChatLoading(true)
     try {
-      const res = await fetch('/api/clarify', {
+      const res = await fetch('/api/prechat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ listing }),
+        body: JSON.stringify({ listing, messages: [] }),
       })
       const data = await res.json()
-      if (data.is_complete || !data.questions?.length) {
-        // Listing is complete — go straight to analysis
-        await runAnalysis(listing, [])
-      } else {
-        setQuestions(data.questions)
-        setAnswers(data.questions.map(() => ''))
-        setFlowStep('clarify')
+      if (data.reply) {
+        setChatMessages([{ role: 'assistant', content: data.reply }])
       }
     } catch {
-      await runAnalysis(listing, [])
+      setChatMessages([{ role: 'assistant', content: 'ကြော်ငြာစာသားကို ဖတ်ရှုပြီးပါပြီ။ ဆန်းစစ်မည် ကို နှိပ်ပါ။' }])
     } finally {
-      setClarifyLoading(false)
+      setChatLoading(false)
+      setTimeout(() => inputRef.current?.focus(), 100)
     }
   }
 
-  async function handleAnalyze() {
-    await runAnalysis(listing, answers)
+  async function handleSendMessage() {
+    const text = chatInput.trim()
+    if (!text || chatLoading) return
+    setChatInput('')
+    const newMessages: ChatMessage[] = [...chatMessages, { role: 'user', content: text }]
+    setChatMessages(newMessages)
+    setChatLoading(true)
+    try {
+      const res = await fetch('/api/prechat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ listing, messages: newMessages }),
+      })
+      const data = await res.json()
+      if (data.reply) {
+        setChatMessages(prev => [...prev, { role: 'assistant', content: data.reply }])
+      }
+    } catch {
+      // silent — user can still click analyze
+    } finally {
+      setChatLoading(false)
+      setTimeout(() => inputRef.current?.focus(), 100)
+    }
   }
 
-  async function runAnalysis(listingText: string, answerList: string[]) {
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSendMessage()
+    }
+  }
+
+  async function runAnalysis() {
     setError(null)
     onLoading(true)
     setFlowStep('done')
-    const fullListing = answerList.some(a => a.trim())
-      ? `${listingText}\n\n--- Additional information provided by user ---\n${questions.map((q, i) => `Q: ${q}\nA: ${answerList[i] || 'မသိပါ'}`).join('\n\n')}`
-      : listingText
+
+    // Build full context: listing + conversation
+    const convo = chatMessages.length
+      ? '\n\n--- ဆွေးနွေးမှုမှ ရရှိသော အချက်အလက်အပိုများ ---\n' +
+        chatMessages.map(m => `${m.role === 'user' ? 'User' : 'AI'}: ${m.content}`).join('\n')
+      : ''
+    const fullListing = listing + convo
+
     try {
       const res = await fetch('/api/analyze', {
         method: 'POST',
@@ -99,14 +131,14 @@ export default function AnalysisForm({ onResult, onListing, onLoading, loading, 
       const data = await res.json()
       if (!res.ok) {
         setError(data.error ?? 'Unable to generate analysis. Please try again.')
-        setFlowStep('paste')
+        setFlowStep('chat')
         return
       }
       onListing?.(fullListing)
       onResult(data as AnalysisResponse, fullListing)
     } catch {
       setError('Unable to generate analysis. Please try again.')
-      setFlowStep('paste')
+      setFlowStep('chat')
     } finally {
       onLoading(false)
     }
@@ -114,13 +146,13 @@ export default function AnalysisForm({ onResult, onListing, onLoading, loading, 
 
   function handleReset() {
     setFlowStep('paste')
-    setQuestions([])
-    setAnswers([])
+    setChatMessages([])
+    setChatInput('')
     setError(null)
   }
 
   const isSeller = mode === 'seller'
-  const busy = loading || clarifyLoading
+  const busy = loading || chatLoading
 
   return (
     <div style={{ background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 14, padding: '24px 24px 28px' }}>
@@ -206,95 +238,80 @@ export default function AnalysisForm({ onResult, onListing, onLoading, loading, 
 
           <button
             type="submit"
-            disabled={busy || !listing.trim()}
+            disabled={!listing.trim()}
             style={{
               width: '100%', marginTop: 14,
-              background: busy || !listing.trim() ? 'rgba(217,162,75,0.35)' : 'linear-gradient(135deg, var(--gold), #C8893A)',
+              background: !listing.trim() ? 'rgba(217,162,75,0.35)' : 'linear-gradient(135deg, var(--gold), #C8893A)',
               color: '#1A2420', border: 'none', borderRadius: 9, padding: '13px',
               fontWeight: 700, fontSize: '0.95rem',
-              cursor: busy || !listing.trim() ? 'not-allowed' : 'pointer',
+              cursor: !listing.trim() ? 'not-allowed' : 'pointer',
             }}
           >
-            {clarifyLoading ? 'AI မေးခွန်းများ ဆန်းစစ်နေသည်…' : isSeller ? '💰 ဆက်လက်ဆောင်ရွက်မည်' : '🏠 ဆက်လက်ဆောင်ရွက်မည်'}
+            {isSeller ? '💰 ဆက်လက်ဆောင်ရွက်မည်' : '🏠 ဆက်လက်ဆောင်ရွက်မည်'}
           </button>
         </form>
       )}
 
-      {/* ── STEP 2: Chat clarification ── */}
-      {flowStep === 'clarify' && (
+      {/* ── STEP 2: Conversational chat before analysis ── */}
+      {flowStep === 'chat' && (
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+          {/* Header */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
             <button onClick={handleReset} style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontSize: '0.85rem', padding: 0 }}>
               ← ပြန်သွားမည်
             </button>
-            <p style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--muted)', fontWeight: 700, margin: 0 }}>
-              AI မေးခွန်းများ
+            <p style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--muted)', fontWeight: 700, margin: 0 }}>
+              AI နှင့် မေးမြန်းမှု
             </p>
           </div>
 
-          {/* Chat bubbles */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20, marginBottom: 20 }}>
-            {/* AI opening message */}
-            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-              <div style={{
-                width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
-                background: 'linear-gradient(135deg, var(--gold), #C8893A)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '0.8rem', fontWeight: 700, color: '#1A2420',
-              }}>AI</div>
-              <div style={{
-                background: 'var(--panel-raised)', border: '1px solid var(--line)',
-                borderRadius: '0 12px 12px 12px', padding: '10px 14px',
-                fontSize: '0.88rem', lineHeight: 1.7, color: 'var(--ink)',
-                maxWidth: '85%',
-              }} className="my">
-                ကြော်ငြာစာသားကို ဖတ်ပြီးပါပြီ။ ပိုကောင်းသော ခွဲခြမ်းစိတ်ဖြာမှုအတွက် အောက်ပါ မေးခွန်းများကို ဖြေကြားပေးပါ —
-              </div>
-            </div>
-
-            {/* Questions + answer inputs */}
-            {questions.map((q, i) => (
-              <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {/* AI question bubble */}
-                <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+          {/* Chat messages */}
+          <div style={{
+            minHeight: 180, maxHeight: 340, overflowY: 'auto',
+            display: 'flex', flexDirection: 'column', gap: 12,
+            marginBottom: 14, paddingRight: 4,
+          }}>
+            {chatMessages.map((msg, i) => (
+              <div key={i} style={{
+                display: 'flex',
+                justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                gap: 8, alignItems: 'flex-end',
+              }}>
+                {msg.role === 'assistant' && (
                   <div style={{
-                    width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+                    width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
                     background: 'linear-gradient(135deg, var(--gold), #C8893A)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '0.8rem', fontWeight: 700, color: '#1A2420',
-                  }}>{i + 1}</div>
-                  <div style={{
-                    background: 'var(--panel-raised)', border: '1px solid var(--line)',
-                    borderRadius: '0 12px 12px 12px', padding: '10px 14px',
-                    fontSize: '0.9rem', lineHeight: 1.7, color: 'var(--ink)',
-                    maxWidth: '85%',
-                  }} className="my">{q}</div>
-                </div>
-
-                {/* User answer bubble */}
-                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                  <textarea
-                    className="my"
-                    value={answers[i]}
-                    onChange={e => {
-                      const next = [...answers]
-                      next[i] = e.target.value
-                      setAnswers(next)
-                    }}
-                    placeholder="ဤနေရာတွင် ဖြေပါ…"
-                    rows={2}
-                    style={{
-                      width: '85%', background: 'rgba(217,162,75,0.08)',
-                      border: '1px solid rgba(217,162,75,0.35)',
-                      borderRadius: '12px 0 12px 12px',
-                      color: 'var(--ink)', padding: '10px 14px',
-                      fontSize: '0.9rem', lineHeight: 1.7, outline: 'none', resize: 'none',
-                    }}
-                  />
+                    fontSize: '0.7rem', fontWeight: 700, color: '#1A2420',
+                  }}>AI</div>
+                )}
+                <div className="my" style={{
+                  maxWidth: '80%', padding: '10px 14px',
+                  borderRadius: msg.role === 'user' ? '12px 12px 0 12px' : '0 12px 12px 12px',
+                  background: msg.role === 'user' ? 'rgba(217,162,75,0.15)' : 'var(--panel-raised)',
+                  border: `1px solid ${msg.role === 'user' ? 'rgba(217,162,75,0.35)' : 'var(--line)'}`,
+                  fontSize: '0.9rem', lineHeight: 1.7, color: 'var(--ink)',
+                }}>
+                  {msg.content}
                 </div>
               </div>
             ))}
 
+            {chatLoading && (
+              <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+                <div style={{
+                  width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+                  background: 'linear-gradient(135deg, var(--gold), #C8893A)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '0.7rem', fontWeight: 700, color: '#1A2420',
+                }}>AI</div>
+                <div style={{
+                  padding: '10px 16px', borderRadius: '0 12px 12px 12px',
+                  background: 'var(--panel-raised)', border: '1px solid var(--line)',
+                  color: 'var(--muted)', fontSize: '1.2rem', letterSpacing: 4,
+                }}>···</div>
+              </div>
+            )}
             <div ref={chatBottomRef} />
           </div>
 
@@ -304,30 +321,51 @@ export default function AnalysisForm({ onResult, onListing, onLoading, loading, 
             </p>
           )}
 
-          <div style={{ display: 'flex', gap: 10 }}>
-            <button
-              onClick={() => runAnalysis(listing, [])}
-              disabled={busy}
+          {/* Input */}
+          <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+            <textarea
+              ref={inputRef}
+              className="my"
+              value={chatInput}
+              onChange={e => setChatInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="ဖြေကြားရန် ဤနေရာတွင် ရိုက်ထည့်ပါ… (Enter နှိပ်၍ ပို့ပါ)"
+              rows={2}
+              disabled={chatLoading}
               style={{
-                flex: 1, padding: '11px', borderRadius: 9,
-                border: '1px solid var(--line)', background: 'var(--panel-raised)',
-                color: 'var(--muted)', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer',
+                flex: 1, background: 'var(--panel-raised)',
+                border: '1px solid var(--line)', borderRadius: 9,
+                color: 'var(--ink)', padding: '10px 14px',
+                fontSize: '0.9rem', lineHeight: 1.7, outline: 'none', resize: 'none',
+              }}
+            />
+            <button
+              onClick={handleSendMessage}
+              disabled={!chatInput.trim() || chatLoading}
+              style={{
+                padding: '0 16px', borderRadius: 9, border: 'none',
+                background: !chatInput.trim() || chatLoading ? 'var(--panel-raised)' : 'var(--gold)',
+                color: !chatInput.trim() || chatLoading ? 'var(--muted)' : '#1A2420',
+                fontWeight: 700, fontSize: '1.1rem', cursor: 'pointer', flexShrink: 0,
               }}
             >
-              ကျော်၍ ဆက်သွားမည်
-            </button>
-            <button
-              onClick={handleAnalyze}
-              disabled={busy}
-              style={{
-                flex: 2, padding: '11px', borderRadius: 9, border: 'none',
-                background: 'linear-gradient(135deg, var(--gold), #C8893A)',
-                color: '#1A2420', fontWeight: 700, fontSize: '0.95rem', cursor: 'pointer',
-              }}
-            >
-              {isSeller ? '💰 ခွဲခြမ်းစိတ်ဖြာမည်' : '🏠 ခွဲခြမ်းစိတ်ဖြာမည်'}
+              ↑
             </button>
           </div>
+
+          {/* Analyze button */}
+          <button
+            onClick={runAnalysis}
+            disabled={busy}
+            style={{
+              width: '100%', padding: '13px', borderRadius: 9, border: 'none',
+              background: busy ? 'rgba(217,162,75,0.35)' : 'linear-gradient(135deg, var(--gold), #C8893A)',
+              color: '#1A2420', fontWeight: 700, fontSize: '0.95rem',
+              cursor: busy ? 'not-allowed' : 'pointer',
+            }}
+          >
+            {isSeller ? '💰 အစီရင်ခံစာ ထုတ်မည်' : '🏠 အစီရင်ခံစာ ထုတ်မည်'}
+          </button>
         </div>
       )}
 
