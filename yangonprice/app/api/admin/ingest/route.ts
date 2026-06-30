@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase'
 import { getOpenAI, buildUserMessage } from '@/lib/openai'
 import { ADMIN_INGESTION_PROMPT } from '@/lib/adminIngestionPrompt'
 import { SYSTEM_PROMPT } from '@/lib/systemPrompt'
-import { AnalysisResponse, ComparableRow } from '@/lib/types'
+import { AnalysisResponse, ComparableRow, MarketDataRow } from '@/lib/types'
 import { computePriceAnalysis, sanitizeAnalysis } from '@/lib/priceUtils'
 import { checkAdminAuth } from '@/lib/adminAuth'
 
@@ -68,9 +68,14 @@ async function runAnalysis(recordId: string, rawContent: string) {
   const openai = getOpenAI()
 
   let comparables: ComparableRow[] = []
+  let marketData: MarketDataRow[] = []
   try {
-    const { data } = await supabase.from('comparables').select('*').order('created_at', { ascending: false })
-    if (data) comparables = data as ComparableRow[]
+    const [compRes, marketRes] = await Promise.all([
+      supabase.from('comparables').select('*').order('created_at', { ascending: false }),
+      supabase.from('market_data').select('id,township,property_type,price_lakh,building_size_sqft,land_size,bedrooms,bathrooms,floors,extraction_notes,market_data_type').order('created_at', { ascending: false }).limit(50),
+    ])
+    if (compRes.data) comparables = compRes.data as ComparableRow[]
+    if (marketRes.data) marketData = marketRes.data as MarketDataRow[]
   } catch { }
 
   const completion = await openai.chat.completions.create({
@@ -78,7 +83,7 @@ async function runAnalysis(recordId: string, rawContent: string) {
     response_format: { type: 'json_object' },
     messages: [
       { role: 'system', content: SYSTEM_PROMPT },
-      { role: 'user', content: buildUserMessage(rawContent, comparables) },
+      { role: 'user', content: buildUserMessage(rawContent, comparables, marketData) },
     ],
     temperature: 0,
   })

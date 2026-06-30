@@ -3,7 +3,7 @@ import { openaiClient, buildUserMessage } from '@/lib/openai'
 import { supabase } from '@/lib/supabase'
 import { SYSTEM_PROMPT } from '@/lib/systemPrompt'
 import { SELLER_PROMPT } from '@/lib/sellerPrompt'
-import { AnalysisResponse, ComparableRow } from '@/lib/types'
+import { AnalysisResponse, ComparableRow, MarketDataRow } from '@/lib/types'
 import { computePriceAnalysis, sanitizeAnalysis } from '@/lib/priceUtils'
 
 export async function POST(req: NextRequest) {
@@ -22,12 +22,14 @@ export async function POST(req: NextRequest) {
   }
 
   let comparables: ComparableRow[] = []
+  let marketData: MarketDataRow[] = []
   try {
-    const { data, error } = await supabase
-      .from('comparables')
-      .select('*')
-      .order('created_at', { ascending: false })
-    if (!error && data) comparables = data as ComparableRow[]
+    const [compRes, marketRes] = await Promise.all([
+      supabase.from('comparables').select('*').order('created_at', { ascending: false }),
+      supabase.from('market_data').select('id,township,property_type,price_lakh,building_size_sqft,land_size,bedrooms,bathrooms,floors,extraction_notes,market_data_type').order('created_at', { ascending: false }).limit(50),
+    ])
+    if (!compRes.error && compRes.data) comparables = compRes.data as ComparableRow[]
+    if (!marketRes.error && marketRes.data) marketData = marketRes.data as MarketDataRow[]
   } catch { }
 
   const systemPrompt = mode === 'seller' ? SELLER_PROMPT : SYSTEM_PROMPT
@@ -39,7 +41,7 @@ export async function POST(req: NextRequest) {
       response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: buildUserMessage(listingText, comparables) },
+        { role: 'user', content: buildUserMessage(listingText, comparables, marketData) },
       ],
       temperature: 0,
     })

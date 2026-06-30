@@ -1,5 +1,5 @@
 import OpenAI from 'openai'
-import { ComparableRow } from './types'
+import { ComparableRow, MarketDataRow } from './types'
 
 let _client: OpenAI | null = null
 
@@ -20,11 +20,12 @@ export const openaiClient = new Proxy({} as OpenAI, {
 export function buildUserMessage(
   listingText: string,
   comparables: ComparableRow[],
+  marketData: MarketDataRow[] = [],
 ): string {
-  const datasetSection =
+  const comparablesSection =
     comparables.length === 0
-      ? 'MARKET DATASET: No comparable listings are available in the dataset for this analysis. Do not invent or assume market prices — use "UNKNOWN" for position and state comparison is not available per your rules.'
-      : `MARKET DATASET (admin-uploaded comparables):
+      ? 'COMPARABLE LISTINGS: None available.'
+      : `COMPARABLE LISTINGS (admin-uploaded, use for per-sqft benchmarking):
 ${comparables
   .map(
     (c) =>
@@ -32,8 +33,31 @@ ${comparables
   )
   .join('\n')}`
 
+  const marketSection =
+    marketData.length === 0
+      ? 'MARKET DATA: None available.'
+      : `MARKET DATA (admin-ingested property listings and market observations):
+${marketData
+  .map((m) => {
+    const parts: string[] = []
+    if (m.township) parts.push(`Township: ${m.township}`)
+    if (m.property_type) parts.push(`Type: ${m.property_type}`)
+    if (m.price_lakh) parts.push(`Price: ${m.price_lakh} lakhs`)
+    if (m.building_size_sqft) parts.push(`Size: ${m.building_size_sqft} sqft`)
+    if (m.bedrooms) parts.push(`Beds: ${m.bedrooms}`)
+    if (m.floors) parts.push(`Floors: ${m.floors}`)
+    if (m.extraction_notes) parts.push(`Notes: ${m.extraction_notes}`)
+    return `- ${parts.join(' | ')}`
+  })
+  .join('\n')}`
+
+  const hasData = comparables.length > 0 || marketData.length > 0
+  const noDataNote = hasData ? '' : '\nNo admin-uploaded market data is available. Apply your general knowledge of the Yangon market and clearly note this in method_note.'
+
   return `PROPERTY LISTING (user pasted):
 ${listingText}
 
-${datasetSection}`
+${comparablesSection}
+
+${marketSection}${noDataNote}`
 }

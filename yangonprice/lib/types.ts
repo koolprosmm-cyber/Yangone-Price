@@ -40,6 +40,20 @@ export interface AnalysisResponse {
   method_note: string
 }
 
+export interface MarketDataRow {
+  id: string
+  township: string | null
+  property_type: string | null
+  price_lakh: number | null
+  building_size_sqft: number | null
+  land_size: string | null
+  bedrooms: number | null
+  bathrooms: number | null
+  floors: number | null
+  extraction_notes: string | null
+  market_data_type: string | null
+}
+
 export interface ComparableRow {
   id: string
   township: string
