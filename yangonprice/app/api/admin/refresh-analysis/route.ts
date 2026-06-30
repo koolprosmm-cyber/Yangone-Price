@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: buildUserMessage(record.raw_content, comparables) },
       ],
-      temperature: 0.2,
+      temperature: 0,
     })
     parsed = JSON.parse(completion.choices[0].message.content ?? '{}')
   } catch {
@@ -61,4 +61,5 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ success: true, analysis: result })
 }
+
 

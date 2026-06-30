@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
         { role: 'system', content: ADMIN_INGESTION_PROMPT },
         { role: 'user', content: rawContent },
       ],
-      temperature: 0.1,
+      temperature: 0,
     })
     extracted = JSON.parse(completion.choices[0].message.content ?? '{}')
   } catch (err) {
@@ -44,4 +44,5 @@ export async function POST(req: NextRequest) {
     confidence_score: extracted.confidence_score ?? null,
   })
 }
+
 

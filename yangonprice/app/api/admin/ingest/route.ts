@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
         { role: 'system', content: ADMIN_INGESTION_PROMPT },
         { role: 'user', content: rawContent },
       ],
-      temperature: 0.1,
+      temperature: 0,
     })
     extracted = JSON.parse(completion.choices[0].message.content ?? '{}')
   } catch {
@@ -80,7 +80,7 @@ async function runAnalysis(recordId: string, rawContent: string) {
       { role: 'system', content: SYSTEM_PROMPT },
       { role: 'user', content: buildUserMessage(rawContent, comparables) },
     ],
-    temperature: 0.2,
+    temperature: 0,
   })
 
   const parsed = JSON.parse(completion.choices[0].message.content ?? '{}') as Record<string, unknown>
@@ -99,4 +99,5 @@ async function runAnalysis(recordId: string, rawContent: string) {
     analysis_generated_at: new Date().toISOString(),
   }).eq('id', recordId)
 }
+
 

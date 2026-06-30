@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { openaiClient, buildUserMessage } from '@/lib/openai'
 import { supabase } from '@/lib/supabase'
 import { SYSTEM_PROMPT } from '@/lib/systemPrompt'
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
         { role: 'system', content: systemPrompt },
         { role: 'user', content: buildUserMessage(listingText, comparables) },
       ],
-      temperature: 0.2,
+      temperature: 0,
     })
     rawJson = completion.choices[0].message.content ?? '{}'
   } catch {
@@ -83,3 +83,4 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json(response)
 }
+
