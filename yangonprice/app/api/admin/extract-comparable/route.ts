@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   try {
     const openai = getOpenAI()
     const completion = await openai.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
+      model: 'meta-llama/llama-3.3-70b-instruct',
       response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: ADMIN_INGESTION_PROMPT },
@@ -44,5 +44,6 @@ export async function POST(req: NextRequest) {
     confidence_score: extracted.confidence_score ?? null,
   })
 }
+
 
 

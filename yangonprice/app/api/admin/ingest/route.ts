@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
   let extracted: Record<string, unknown>
   try {
     const completion = await openai.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
+      model: 'meta-llama/llama-3.3-70b-instruct',
       response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: ADMIN_INGESTION_PROMPT },
@@ -79,7 +79,7 @@ async function runAnalysis(recordId: string, rawContent: string) {
   } catch { }
 
   const completion = await openai.chat.completions.create({
-    model: 'llama-3.3-70b-versatile',
+    model: 'meta-llama/llama-3.3-70b-instruct',
     response_format: { type: 'json_object' },
     messages: [
       { role: 'system', content: SYSTEM_PROMPT },
@@ -104,6 +104,7 @@ async function runAnalysis(recordId: string, rawContent: string) {
     analysis_generated_at: new Date().toISOString(),
   }).eq('id', recordId)
 }
+
 
 
 

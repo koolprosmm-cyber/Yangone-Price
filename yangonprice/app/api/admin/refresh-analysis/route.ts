@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
   let parsed: Record<string, unknown>
   try {
     const completion = await openai.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
+      model: 'meta-llama/llama-3.3-70b-instruct',
       response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
@@ -66,6 +66,7 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ success: true, analysis: result })
 }
+
 
 
 

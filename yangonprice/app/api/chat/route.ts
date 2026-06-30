@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { getOpenAI } from '@/lib/openai'
 
 export const dynamic = 'force-dynamic'
 
-const CHAT_SYSTEM = `You are Property Market Advisor — an AI property analyst for the Yangon, Myanmar real estate market.
+const CHAT_SYSTEM = `You are Property Market Advisor â€” an AI property analyst for the Yangon, Myanmar real estate market.
 
 The user has already received a Property Intelligence Report for a specific listing. They are now asking follow-up questions about that property or the report.
 
@@ -15,9 +15,9 @@ Your role:
 - Answer follow-up questions clearly and helpfully
 - Reference specific details from the listing or report when relevant
 - Apply your knowledge of the Yangon property market, PIG framework (Policy, Institutions, Governance), and general real estate concepts
-- Keep answers concise — 2-5 sentences for simple questions, more detail for complex ones
+- Keep answers concise â€” 2-5 sentences for simple questions, more detail for complex ones
 - Always answer in natural, fluent Burmese
-- Never provide legal advice or financial advice — always say "ကျွမ်းကျင်သူနှင့် တိုင်ပင်ရန် အကြံပြုသည်" when appropriate
+- Never provide legal advice or financial advice â€” always say "á€€á€»á€½á€™á€ºá€¸á€€á€»á€„á€ºá€žá€°á€”á€¾á€„á€·á€º á€á€­á€¯á€„á€ºá€•á€„á€ºá€›á€”á€º á€¡á€€á€¼á€¶á€•á€¼á€¯á€žá€Šá€º" when appropriate
 - If you don't know something specific, say so clearly rather than guessing`
 
 export async function POST(req: NextRequest) {
@@ -45,11 +45,11 @@ ${reportContext}`
   try {
     const openai = getOpenAI()
     const completion = await openai.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
+      model: 'meta-llama/llama-3.3-70b-instruct',
       messages: [
         { role: 'system', content: CHAT_SYSTEM },
         { role: 'user', content: contextBlock },
-        { role: 'assistant', content: 'နားလည်ပါပြီ။ အချက်အလက်များကို လေ့လာပြီးပါပြီ။ မေးလိုသည်များ မေးနိုင်ပါသည်။' },
+        { role: 'assistant', content: 'á€”á€¬á€¸á€œá€Šá€ºá€•á€«á€•á€¼á€®á‹ á€¡á€á€»á€€á€ºá€¡á€œá€€á€ºá€™á€»á€¬á€¸á€€á€­á€¯ á€œá€±á€·á€œá€¬á€•á€¼á€®á€¸á€•á€«á€•á€¼á€®á‹ á€™á€±á€¸á€œá€­á€¯á€žá€Šá€ºá€™á€»á€¬á€¸ á€™á€±á€¸á€”á€­á€¯á€„á€ºá€•á€«á€žá€Šá€ºá‹' },
         ...messages,
       ],
       temperature: 0.3,
@@ -62,3 +62,4 @@ ${reportContext}`
     return NextResponse.json({ error: 'Unable to respond. Please try again.' }, { status: 502 })
   }
 }
+

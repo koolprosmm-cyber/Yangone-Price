@@ -5,9 +5,9 @@ let _client: OpenAI | null = null
 
 export function getOpenAI(): OpenAI {
   if (_client) return _client
-  const key = process.env.GROQ_API_KEY
-  if (!key) throw new Error('Missing GROQ_API_KEY')
-  _client = new OpenAI({ apiKey: key, baseURL: 'https://api.groq.com/openai/v1' })
+  const key = process.env.OPENROUTER_API_KEY
+  if (!key) throw new Error('Missing OPENROUTER_API_KEY')
+  _client = new OpenAI({ apiKey: key, baseURL: 'https://openrouter.ai/api/v1' })
   return _client
 }
 
