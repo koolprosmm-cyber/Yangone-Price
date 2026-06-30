@@ -146,27 +146,12 @@ export default function HomePage() {
                 justifyContent: 'center',
                 gap: 14,
               }}>
-                {loading ? (
-                  <>
-                    <div style={{
-                      width: 40, height: 40,
-                      border: '3px solid var(--line)',
-                      borderTop: '3px solid var(--gold)',
-                      borderRadius: '50%',
-                      animation: 'spin 0.8s linear infinite',
-                    }} />
-                    <p className="my" style={{ margin: 0, color: 'var(--muted)', fontSize: '0.95rem' }}>
-                      ခွဲခြမ်းစိတ်ဖြာနေသည်…
-                    </p>
-                  </>
-                ) : (
                   <>
                     <div style={{ fontSize: '2rem', opacity: 0.25 }}>🏢</div>
                     <p style={{ color: 'var(--muted)', textAlign: 'center', fontSize: '0.88rem', margin: 0, maxWidth: 260, lineHeight: 1.7 }}>
-                      Paste a property listing and click <strong style={{ color: 'var(--ink)' }}>Analyze Property</strong> to get a full market report.
+                      Paste a property listing on the left and click <strong style={{ color: 'var(--ink)' }}>ဆက်လက်ဆောင်ရွက်မည်</strong> to get a full market report.
                     </p>
                   </>
-                )}
               </div>
             )}
           </div>

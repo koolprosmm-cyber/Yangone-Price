@@ -1,4 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server'
+
+export const maxDuration = 30
 import { openaiClient, MAIN_MODEL, buildUserMessage } from '@/lib/openai'
 import { supabase } from '@/lib/supabase'
 import { SYSTEM_PROMPT } from '@/lib/systemPrompt'
