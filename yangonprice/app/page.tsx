@@ -21,6 +21,11 @@ function loadHistory(): HistoryEntry[] {
   try { return JSON.parse(localStorage.getItem(HISTORY_KEY) ?? '[]') } catch { return [] }
 }
 
+function deleteFromHistory(id: string) {
+  const prev = loadHistory().filter(h => h.id !== id)
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(prev))
+}
+
 function saveToHistory(result: AnalysisResponse) {
   const ex = result.extracted_data
   const entry: HistoryEntry = {
@@ -43,6 +48,11 @@ export default function HomePage() {
   const [history, setHistory] = useState<HistoryEntry[]>([])
 
   useEffect(() => { setHistory(loadHistory()) }, [])
+
+  function handleDelete(id: string) {
+    deleteFromHistory(id)
+    setHistory(loadHistory())
+  }
 
   function handleResult(r: AnalysisResponse) {
     setResult(r)
@@ -91,11 +101,22 @@ export default function HomePage() {
                           {new Date(h.ts).toLocaleDateString()}
                         </div>
                       </div>
-                      {h.result.decision && (
-                        <span style={{ fontSize: '0.72rem', fontWeight: 700, flexShrink: 0, color: decisionColor[h.result.decision] ?? 'var(--muted)' }}>
-                          {h.result.decision}
-                        </span>
-                      )}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                        {h.result.decision && (
+                          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: decisionColor[h.result.decision] ?? 'var(--muted)' }}>
+                            {h.result.decision}
+                          </span>
+                        )}
+                        <button
+                          onClick={e => { e.stopPropagation(); handleDelete(h.id) }}
+                          style={{
+                            background: 'none', border: 'none', cursor: 'pointer',
+                            color: 'var(--muted)', fontSize: '0.85rem', padding: '2px 4px',
+                            lineHeight: 1, borderRadius: 4,
+                          }}
+                          title="Delete"
+                        >✕</button>
+                      </div>
                     </button>
                   ))}
                 </div>

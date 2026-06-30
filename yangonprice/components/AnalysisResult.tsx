@@ -48,6 +48,7 @@ interface Props { result: AnalysisResponse }
 
 export default function AnalysisResult({ result }: Props) {
   const ex = result.extracted_data
+  const isSeller = result.mode === 'seller'
 
   return (
     <div style={{ background: 'var(--panel)', border: '1px solid var(--line)', borderRadius: 14, padding: '28px 30px' }}>
@@ -158,7 +159,7 @@ export default function AnalysisResult({ result }: Props) {
       {/* ── Potential Strengths ── */}
       {result.potential_strengths?.filter(Boolean).length > 0 && (
         <>
-          <SectionLabel>Potential Strengths</SectionLabel>
+          <SectionLabel>{isSeller ? 'Selling Points' : 'Potential Strengths'}</SectionLabel>
           <div style={{ ...card, paddingTop: 10, paddingBottom: 10 }}>
             <BulletList items={result.potential_strengths} color="var(--good)" />
           </div>
@@ -168,7 +169,7 @@ export default function AnalysisResult({ result }: Props) {
       {/* ── Potential Risks ── */}
       {result.potential_risks?.filter(Boolean).length > 0 && (
         <>
-          <SectionLabel>Potential Risks or Considerations</SectionLabel>
+          <SectionLabel>{isSeller ? 'Buyer Objections / Deal Risks' : 'Potential Risks or Considerations'}</SectionLabel>
           <div style={{ ...card, paddingTop: 10, paddingBottom: 10 }}>
             <BulletList items={result.potential_risks} color="var(--bad)" />
           </div>
@@ -178,7 +179,7 @@ export default function AnalysisResult({ result }: Props) {
       {/* ── Investment Potential Reasoning ── */}
       {result.investment_potential_reasoning && (
         <div style={{ marginBottom: 22 }}>
-          <SectionLabel>Investment Potential Assessment</SectionLabel>
+          <SectionLabel>{isSeller ? 'Sale Potential Assessment' : 'Investment Potential Assessment'}</SectionLabel>
           <div className="my" style={{
             background: result.investment_potential === 'Strong Potential' ? 'var(--good-soft)' : result.investment_potential === 'Limited Potential' ? 'var(--bad-soft)' : 'var(--gold-soft)',
             border: `1px solid ${result.investment_potential === 'Strong Potential' ? 'rgba(95,190,140,0.4)' : result.investment_potential === 'Limited Potential' ? 'rgba(226,100,90,0.4)' : 'rgba(217,162,75,0.4)'}`,

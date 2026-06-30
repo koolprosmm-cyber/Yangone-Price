@@ -1,15 +1,18 @@
-﻿import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { openaiClient, buildUserMessage } from '@/lib/openai'
 import { supabase } from '@/lib/supabase'
 import { SYSTEM_PROMPT } from '@/lib/systemPrompt'
+import { SELLER_PROMPT } from '@/lib/sellerPrompt'
 import { AnalysisResponse, ComparableRow } from '@/lib/types'
 import { computePriceAnalysis, sanitizeAnalysis } from '@/lib/priceUtils'
 
 export async function POST(req: NextRequest) {
   let listingText: string
+  let mode: 'buyer' | 'seller' = 'buyer'
   try {
     const body = await req.json()
     listingText = (body.listing ?? '').trim()
+    if (body.mode === 'seller') mode = 'seller'
   } catch {
     return NextResponse.json({ error: 'Unable to generate analysis. Please try again.' }, { status: 400 })
   }
@@ -18,7 +21,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Please paste a property listing.' }, { status: 400 })
   }
 
-  // Fetch comparables
   let comparables: ComparableRow[] = []
   try {
     const { data, error } = await supabase
@@ -26,59 +28,45 @@ export async function POST(req: NextRequest) {
       .select('*')
       .order('created_at', { ascending: false })
     if (!error && data) comparables = data as ComparableRow[]
-  } catch {
-    // Non-fatal
-  }
+  } catch { }
 
-  // Call OpenAI
+  const systemPrompt = mode === 'seller' ? SELLER_PROMPT : SYSTEM_PROMPT
+
   let rawJson: string
   try {
     const completion = await openaiClient.chat.completions.create({
       model: 'llama-3.3-70b-versatile',
       response_format: { type: 'json_object' },
       messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'system', content: systemPrompt },
         { role: 'user', content: buildUserMessage(listingText, comparables) },
       ],
       temperature: 0.2,
     })
     rawJson = completion.choices[0].message.content ?? '{}'
   } catch {
-    return NextResponse.json(
-      { error: 'Unable to generate analysis. Please try again.' },
-      { status: 502 }
-    )
+    return NextResponse.json({ error: 'Unable to generate analysis. Please try again.' }, { status: 502 })
   }
 
   let parsed: Record<string, unknown>
   try {
     parsed = JSON.parse(rawJson)
   } catch {
-    return NextResponse.json(
-      { error: 'Unable to generate analysis. Please try again.' },
-      { status: 502 }
-    )
+    return NextResponse.json({ error: 'Unable to generate analysis. Please try again.' }, { status: 502 })
   }
 
-  // Compute position and delta_percent server-side from normalized per-sqft values
-  const modelPriceAnalysis = parsed.price_analysis as Record<string, number | null> | undefined
-  const userPerSqft = modelPriceAnalysis?.user_price_per_sqft_lakh ?? null
-  const marketPerSqft = modelPriceAnalysis?.market_average_per_sqft_lakh ?? null
+  const modelPA = parsed.price_analysis as Record<string, number | null> | undefined
+  const userPerSqft = modelPA?.user_price_per_sqft_lakh ?? null
+  const marketPerSqft = modelPA?.market_average_per_sqft_lakh ?? null
   const { position, delta_percent } = computePriceAnalysis(
     typeof userPerSqft === 'number' ? userPerSqft : null,
     typeof marketPerSqft === 'number' ? marketPerSqft : null,
   )
-
-  parsed.price_analysis = {
-    user_price_per_sqft_lakh: userPerSqft,
-    market_average_per_sqft_lakh: marketPerSqft,
-    position,
-    delta_percent,
-  }
+  parsed.price_analysis = { user_price_per_sqft_lakh: userPerSqft, market_average_per_sqft_lakh: marketPerSqft, position, delta_percent }
+  parsed.mode = mode
 
   const response = sanitizeAnalysis(parsed as unknown as AnalysisResponse)
 
-  // Log to Supabase (non-fatal)
   try {
     await supabase.from('analyses').insert({
       raw_input: listingText,
@@ -91,10 +79,7 @@ export async function POST(req: NextRequest) {
       extracted_data: response.extracted_data,
       price_analysis: response.price_analysis,
     })
-  } catch {
-    // Non-fatal
-  }
+  } catch { }
 
   return NextResponse.json(response)
 }
-

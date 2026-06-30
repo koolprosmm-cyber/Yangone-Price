@@ -24,7 +24,8 @@ export interface PriceAnalysis {
 export interface AnalysisResponse {
   extracted_data: ExtractedData
   price_analysis: PriceAnalysis
-  decision: 'BUY' | 'WAIT' | 'AVOID'
+  decision: 'BUY' | 'WAIT' | 'AVOID' | 'COMPETITIVE' | 'OVERPRICED' | 'UNDERPRICED'
+  mode?: 'buyer' | 'seller'
   investment_potential: 'Strong Potential' | 'Moderate Potential' | 'Limited Potential'
   investment_potential_reasoning: string
   key_findings: string[]
