@@ -29,8 +29,10 @@ export async function POST(req: NextRequest) {
       temperature: 0.1,
     })
     extracted = JSON.parse(completion.choices[0].message.content ?? '{}')
-  } catch {
-    return NextResponse.json({ error: 'AI extraction failed. Please try again.' }, { status: 502 })
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error('[extract-comparable] AI error:', msg)
+    return NextResponse.json({ error: `AI extraction failed: ${msg}` }, { status: 502 })
   }
 
   return NextResponse.json({
