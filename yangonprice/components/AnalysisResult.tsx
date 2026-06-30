@@ -310,6 +310,32 @@ export default function AnalysisResult({ result }: Props) {
         </p>
       )}
 
+      {/* ── Trust Metadata Bar ── */}
+      {result.trust_metadata && (
+        <div style={{
+          marginTop: 16, padding: '10px 14px',
+          background: 'rgba(217,162,75,0.06)', borderRadius: 8,
+          border: '1px solid rgba(217,162,75,0.2)',
+          display: 'flex', flexWrap: 'wrap', gap: '6px 20px',
+        }}>
+          <span style={{ fontSize: '0.7rem', color: 'var(--muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', width: '100%' }}>
+            Report Intelligence
+          </span>
+          <span style={{ fontSize: '0.72rem', color: 'var(--muted)' }}>
+            🤖 {result.trust_metadata.aiModel}
+          </span>
+          <span style={{ fontSize: '0.72rem', color: 'var(--muted)' }}>
+            📚 KB v{result.trust_metadata.knowledgeBaseVersion}
+          </span>
+          <span style={{ fontSize: '0.72rem', color: 'var(--muted)' }}>
+            📊 {result.trust_metadata.dataFreshnessSummary}
+          </span>
+          <span style={{ fontSize: '0.72rem', color: 'var(--muted)' }}>
+            🕐 {new Date(result.trust_metadata.generatedAt).toLocaleString()}
+          </span>
+        </div>
+      )}
+
       {/* ── PDF Download ── */}
       <div style={{ borderTop: '1px solid var(--line)', marginTop: 24, paddingTop: 20, textAlign: 'center' }}>
         <PdfDownload result={result} />

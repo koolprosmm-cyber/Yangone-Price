@@ -62,6 +62,14 @@ export interface AnalysisResponse {
   confidence: 'High' | 'Medium' | 'Low'
   confidence_explanation: string
   method_note: string
+  trust_metadata?: ReportTrustMetadata
+}
+
+export interface ReportTrustMetadata {
+  generatedAt: string
+  aiModel: string
+  knowledgeBaseVersion: number
+  dataFreshnessSummary: string
 }
 
 export interface MarketDataRow {
@@ -76,6 +84,8 @@ export interface MarketDataRow {
   floors: number | null
   extraction_notes: string | null
   market_data_type: string | null
+  reliability_tier?: string | null
+  created_at?: string | null
 }
 
 export interface ComparableRow {

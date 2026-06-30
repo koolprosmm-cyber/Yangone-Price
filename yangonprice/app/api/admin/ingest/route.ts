@@ -6,6 +6,7 @@ import { SYSTEM_PROMPT } from '@/lib/systemPrompt'
 import { AnalysisResponse, ComparableRow, MarketDataRow } from '@/lib/types'
 import { computePriceAnalysis, sanitizeAnalysis } from '@/lib/priceUtils'
 import { checkAdminAuth } from '@/lib/adminAuth'
+import { incrementKBVersion } from '@/lib/knowledge-retrieval'
 
 export async function POST(req: NextRequest) {
   const { authorized, error } = checkAdminAuth()
@@ -59,9 +60,12 @@ export async function POST(req: NextRequest) {
 
   if (insertError) return NextResponse.json({ error: insertError.message }, { status: 500 })
 
+  // Increment KB version after successful ingestion
+  const newKBVersion = await incrementKBVersion(`Admin ingestion: ${extracted.property_type ?? 'property'} in ${extracted.township ?? 'unknown'}`)
+
   runAnalysis(record.id, rawContent).catch(() => { })
 
-  return NextResponse.json({ success: true, record, extracted })
+  return NextResponse.json({ success: true, record, extracted, kbVersion: newKBVersion })
 }
 
 async function runAnalysis(recordId: string, rawContent: string) {
