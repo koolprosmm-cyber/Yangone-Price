@@ -14,9 +14,10 @@ Produce specific, analytical insights — NOT a summary of what the listing alre
 7. evidence_used.from_listing = specific facts from listing only (price, size, location, features). NO analysis here.
 8. evidence_used.from_market_database = only if database records were provided. If none: write "ဤမြို့နယ်အတွက် ဒေတာဘေ့စ်မှတ်တမ်း မရှိပါ"
 9. ALL prose in natural Burmese. decision/investment_potential/confidence in English only.
-10. Burmese vocabulary: "အပိတ်"=firm price; "ညှိနှိုင်း"=negotiable; "အိမ်ခန်းနှစ်ခန်း"=2 bed; "ရေချိုးခန်း"=bathroom; "ထပ်"=floor
-11. NEVER say price is missing if price_lakh was extracted.
-12. price_analysis: calculate user_price_per_sqft_lakh = price_lakh ÷ building_size_sqft. If no sqft: set null.
+10. Burmese vocabulary: "အပိတ်"=firm price; "ညှိနှိုင်း"=negotiable; "အိမ်ခန်းတစ်ခန်း"=1 bed; "အိမ်ခန်းနှစ်ခန်း"=2 bed; "အိမ်ခန်းသုံးခန်း"=3 bed; "အိမ်ခန်းလေးခန်း"=4 bed; "ရေချိုးခန်း"=bathroom; "ထပ်"=floor/storey
+11. BURMESE NUMERALS — always convert: ၀=0 ၁=1 ၂=2 ၃=3 ၄=4 ၅=5 ၆=6 ၇=7 ၈=8 ၉=9. Example: "စျေး ၁၉၅၀" → price_lakh=1950. "၁၅x၆၀" → land_size="15x60". "အိမ်ခန်းနှစ်ခန်း" → bedrooms=2.
+12. NEVER say price is missing if price_lakh was extracted.
+13. price_analysis: calculate user_price_per_sqft_lakh = price_lakh ÷ building_size_sqft. If no sqft: set null.
 
 ━━━ PIG SCORE GUIDE ━━━
 property_completeness: 1=less than 3 fields known | 2=price+location only | 3=most fields present | 4=nearly complete | 5=fully detailed with deed/sqft/bathrooms
