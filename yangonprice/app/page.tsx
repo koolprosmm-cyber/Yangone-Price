@@ -54,10 +54,17 @@ export default function HomePage() {
     setHistory(loadHistory())
   }
 
+  const [formKey, setFormKey] = useState(0)
+
   function handleResult(r: AnalysisResponse) {
     setResult(r)
     saveToHistory(r)
     setHistory(loadHistory())
+  }
+
+  function handleNewAnalysis() {
+    setResult(null)
+    setFormKey(k => k + 1)
   }
 
   return (
@@ -72,7 +79,7 @@ export default function HomePage() {
         <div className="main-grid">
           {/* Left col */}
           <div>
-            <AnalysisForm onResult={handleResult} onLoading={setLoading} loading={loading} />
+            <AnalysisForm key={formKey} onResult={handleResult} onLoading={setLoading} loading={loading} />
 
             {/* History */}
             {history.length > 0 && (
@@ -128,6 +135,17 @@ export default function HomePage() {
           <div>
             {result ? (
               <div>
+                <button
+                  onClick={handleNewAnalysis}
+                  style={{
+                    width: '100%', marginBottom: 12, padding: '10px',
+                    background: 'var(--panel-raised)', border: '1px solid var(--line)',
+                    borderRadius: 9, color: 'var(--muted)', fontWeight: 600,
+                    fontSize: '0.88rem', cursor: 'pointer',
+                  }}
+                >
+                  ← အိမ်ခြံမြေသစ် ဆန်းစစ်မည်
+                </button>
                 <AnalysisResult result={result} />
                 <p style={{ fontSize: '0.75rem', color: 'var(--muted)', marginTop: 14, textAlign: 'center' }}>
                   AI-Generated Analysis — Not Financial, Legal, or Investment Advice
