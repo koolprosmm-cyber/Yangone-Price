@@ -22,16 +22,17 @@ const SUGGESTED = [
 
 function buildReportContext(result: AnalysisResponse): string {
   const lines: string[] = []
-  if (result.extracted_data?.township) lines.push(`Township: ${result.extracted_data.township}`)
-  if (result.extracted_data?.property_type) lines.push(`Type: ${result.extracted_data.property_type}`)
-  if (result.extracted_data?.price_lakh) lines.push(`Price: ${result.extracted_data.price_lakh} lakhs`)
-  if (result.decision) lines.push(`Decision: ${result.decision}`)
+  const sig = result.extracted_signal
+  if (sig?.township) lines.push(`Township: ${sig.township}`)
+  if (sig?.property_type) lines.push(`Type: ${sig.property_type}`)
+  if (sig?.price_lakh) lines.push(`Price: ${sig.price_lakh} lakhs`)
+  const verdict = result.verdict ?? result.decision
+  if (verdict) lines.push(`Verdict: ${verdict}`)
   if (result.investment_potential) lines.push(`Investment: ${result.investment_potential}`)
   if (result.confidence) lines.push(`Confidence: ${result.confidence}`)
-  if (result.market_intelligence) lines.push(`Market: ${result.market_intelligence.slice(0, 300)}`)
-  if (result.property_intelligence) lines.push(`Analysis: ${result.property_intelligence.slice(0, 300)}`)
+  if (result.market_summary) lines.push(`Market: ${result.market_summary.slice(0, 300)}`)
   if (result.key_findings?.length) lines.push(`Key findings: ${result.key_findings.slice(0, 3).join(' | ')}`)
-  if (result.potential_risks?.length) lines.push(`Risks: ${result.potential_risks.slice(0, 3).join(' | ')}`)
+  if (result.red_flags?.length) lines.push(`Red flags: ${result.red_flags.slice(0, 3).join(' | ')}`)
   return lines.join('\n')
 }
 

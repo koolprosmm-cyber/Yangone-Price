@@ -28,30 +28,24 @@ export default function PdfDownload({ result }: Props) {
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
       const pageW = pdf.internal.pageSize.getWidth()
       const pageH = pdf.internal.pageSize.getHeight()
-      const margin = 12
-      const imgW = pageW - margin * 2
-      const imgH = (canvas.height / canvas.width) * imgW
+      const imgW = pageW
+      const imgH = (canvas.height * imgW) / canvas.width
+      let heightLeft = imgH
+      let position = 0
 
-      let yOffset = 0
-      let page = 0
-      while (yOffset < imgH) {
-        if (page > 0) pdf.addPage()
-        const srcY = (yOffset / imgH) * canvas.height
-        const sliceH = Math.min((pageH - margin * 2) / imgW * canvas.width, canvas.height - srcY)
+      pdf.addImage(canvas.toDataURL('image/jpeg', 0.85), 'JPEG', 0, position, imgW, imgH)
+      heightLeft -= pageH
 
-        const sliceCanvas = document.createElement('canvas')
-        sliceCanvas.width = canvas.width
-        sliceCanvas.height = sliceH
-        const ctx = sliceCanvas.getContext('2d')!
-        ctx.drawImage(canvas, 0, srcY, canvas.width, sliceH, 0, 0, canvas.width, sliceH)
-
-        pdf.addImage(sliceCanvas.toDataURL('image/jpeg', 0.95), 'JPEG', margin, margin, imgW, (sliceH / canvas.width) * imgW)
-        yOffset += pageH - margin * 2
-        page++
+      while (heightLeft > 0) {
+        position -= pageH
+        pdf.addPage()
+        pdf.addImage(canvas.toDataURL('image/jpeg', 0.85), 'JPEG', 0, position, imgW, imgH)
+        heightLeft -= pageH
       }
 
-      const date = new Date().toISOString().slice(0, 10)
-      pdf.save(`YangonPrice_Report_${date}.pdf`)
+      const sig = result.extracted_signal
+      const fileName = [sig?.township, sig?.property_type, 'YangonPrice'].filter(Boolean).join('-') + '.pdf'
+      pdf.save(fileName)
       setStatus('done')
       setTimeout(() => setStatus('idle'), 4000)
     } catch (err) {
@@ -61,14 +55,16 @@ export default function PdfDownload({ result }: Props) {
     }
   }
 
-  const ex = result.extracted_data
-  const pa = result.price_analysis
+  const sig = result.extracted_signal
+  const pp = result.price_position
+  const pig = result.pig_analysis
+  const verdict = result.verdict ?? result.decision
   const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })
 
-  const decisionColor: Record<string, string> = { BUY: '#fff', WAIT: '#1a2420', AVOID: '#fff' }
-  const decisionBg: Record<string, string> = { BUY: '#16a34a', WAIT: '#D9A24B', AVOID: '#dc2626' }
-  const positionLabel: Record<string, string> = { ABOVE: 'Above Market ↑', BELOW: 'Below Market ↓', AVERAGE: 'At Market →', UNKNOWN: '—' }
-  const positionColor: Record<string, string> = { ABOVE: '#dc2626', BELOW: '#16a34a', AVERAGE: '#D9A24B', UNKNOWN: '#888' }
+  const verdictColor: Record<string, string> = { BUY: '#fff', WAIT: '#1a2420', AVOID: '#fff' }
+  const verdictBg: Record<string, string> = { BUY: '#16a34a', WAIT: '#D9A24B', AVOID: '#dc2626' }
+  const positionLabel: Record<string, string> = { ABOVE: 'Above Market ↑', BELOW: 'Below Market ↓', AT_MARKET: 'At Market →', UNKNOWN: '—' }
+  const positionColor: Record<string, string> = { ABOVE: '#dc2626', BELOW: '#16a34a', AT_MARKET: '#D9A24B', UNKNOWN: '#888' }
   const confidenceBg: Record<string, string> = { High: '#dcfce7', Medium: '#fef9c3', Low: '#fee2e2' }
   const confidenceColor: Record<string, string> = { High: '#166534', Medium: '#92400e', Low: '#991b1b' }
 
@@ -94,7 +90,7 @@ export default function PdfDownload({ result }: Props) {
           : '📄 Download Report'}
       </button>
 
-      {/* Hidden report — captured by html2canvas */}
+      {/* Hidden report captured by html2canvas */}
       <div style={{ position: 'fixed', left: '-9999px', top: 0 }}>
         <div ref={reportRef} style={{
           width: 794, background: '#fff', color: '#111',
@@ -102,7 +98,7 @@ export default function PdfDownload({ result }: Props) {
           boxSizing: 'border-box',
         }}>
 
-          {/* Header banner */}
+          {/* Header */}
           <div style={{ background: '#121A2B', padding: '32px 48px 28px', color: '#fff' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
@@ -127,40 +123,34 @@ export default function PdfDownload({ result }: Props) {
                 )}
               </div>
             </div>
-
-            {/* Property title */}
             <div style={{ marginTop: 20, paddingTop: 20, borderTop: '1px solid #2E3B59' }}>
               <div style={{ fontSize: 17, fontWeight: 700, color: '#fff' }}>
-                {[ex?.township, ex?.property_type].filter(Boolean).join(' — ') || 'Property Analysis'}
+                {[sig?.township, sig?.property_type].filter(Boolean).join(' — ') || 'Property Analysis'}
               </div>
-              {ex?.location && <div style={{ fontSize: 12, color: '#8C97B5', marginTop: 4 }}>{ex.location}</div>}
             </div>
           </div>
 
-          {/* Decision bar */}
-          {result.decision && (
+          {/* Verdict bar */}
+          {verdict && (
             <div style={{
-              background: decisionBg[result.decision] ?? '#f3f4f6',
+              background: verdictBg[verdict] ?? '#f3f4f6',
               padding: '14px 48px',
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <span style={{
-                  fontSize: 16, fontWeight: 800, letterSpacing: '0.05em',
-                  color: decisionColor[result.decision] ?? '#111',
-                }}>
-                  {result.decision}
+                <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: '0.05em', color: verdictColor[verdict] ?? '#111' }}>
+                  {verdict}
                 </span>
                 {result.investment_potential && (
-                  <span style={{ fontSize: 12, color: decisionColor[result.decision] ?? '#333', opacity: 0.8 }}>
+                  <span style={{ fontSize: 12, color: verdictColor[verdict] ?? '#333', opacity: 0.8 }}>
                     · {result.investment_potential}
                   </span>
                 )}
               </div>
-              {pa?.position && pa.position !== 'UNKNOWN' && (
-                <span style={{ fontSize: 12, fontWeight: 700, color: positionColor[pa.position] ?? '#333' }}>
-                  {positionLabel[pa.position]}
-                  {pa.delta_percent != null && ` ${pa.delta_percent > 0 ? '+' : ''}${pa.delta_percent}%`}
+              {pp?.position && pp.position !== 'UNKNOWN' && (
+                <span style={{ fontSize: 12, fontWeight: 700, color: positionColor[pp.position] ?? '#333' }}>
+                  {positionLabel[pp.position]}
+                  {pp.delta_percent != null && ` ${pp.delta_percent > 0 ? '+' : ''}${pp.delta_percent}%`}
                 </span>
               )}
             </div>
@@ -168,101 +158,66 @@ export default function PdfDownload({ result }: Props) {
 
           <div style={{ padding: '32px 48px' }}>
 
-            {/* Property details */}
-            <Section title="Property Details">
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 24px' }}>
+            {/* Verdict reason */}
+            {result.verdict_reason && (
+              <div style={{ marginBottom: 24, padding: '14px 18px', background: '#FEFCE8', border: '1px solid #FDE68A', borderRadius: 6 }}>
+                <p style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.8, margin: 0, color: '#1a2420' }}>{result.verdict_reason}</p>
+              </div>
+            )}
+
+            {/* Price vs Market */}
+            {pp && (pp.user_price_per_sqft_lakh != null || pp.market_avg_per_sqft_lakh != null) && (
+              <Section title="Price vs Market">
+                <div style={{ display: 'flex', gap: 16, marginBottom: pp.gap_narrative ? 12 : 0 }}>
+                  {pp.user_price_per_sqft_lakh != null && (
+                    <div style={{ flex: 1, background: '#f8f9fa', borderRadius: 6, padding: '12px 16px', textAlign: 'center' }}>
+                      <div style={{ fontSize: 18, fontWeight: 800, color: '#111' }}>{pp.user_price_per_sqft_lakh.toFixed(2)}</div>
+                      <div style={{ fontSize: 10, color: '#888', marginTop: 3 }}>lakh/sqft (this property)</div>
+                    </div>
+                  )}
+                  {pp.market_avg_per_sqft_lakh != null && (
+                    <div style={{ flex: 1, background: '#f8f9fa', borderRadius: 6, padding: '12px 16px', textAlign: 'center' }}>
+                      <div style={{ fontSize: 18, fontWeight: 800, color: '#111' }}>{pp.market_avg_per_sqft_lakh.toFixed(2)}</div>
+                      <div style={{ fontSize: 10, color: '#888', marginTop: 3 }}>lakh/sqft (market avg)</div>
+                    </div>
+                  )}
+                  {pp.position && pp.position !== 'UNKNOWN' && (
+                    <div style={{ flex: 1, background: pp.position === 'BELOW' ? '#dcfce7' : pp.position === 'ABOVE' ? '#fee2e2' : '#fef9c3', borderRadius: 6, padding: '12px 16px', textAlign: 'center' }}>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: positionColor[pp.position] }}>
+                        {pp.delta_percent != null ? `${pp.delta_percent > 0 ? '+' : ''}${pp.delta_percent}%` : '—'}
+                      </div>
+                      <div style={{ fontSize: 10, color: positionColor[pp.position], marginTop: 3 }}>{positionLabel[pp.position]}</div>
+                    </div>
+                  )}
+                </div>
+                {pp.gap_narrative && <p style={{ fontSize: 12, lineHeight: 1.8, margin: 0, color: '#222' }}>{pp.gap_narrative}</p>}
+              </Section>
+            )}
+
+            {/* Market Summary */}
+            {result.market_summary && (
+              <Section title="Market Analysis">
+                <p style={{ fontSize: 12, lineHeight: 1.9, margin: 0, color: '#222' }}>{result.market_summary}</p>
+              </Section>
+            )}
+
+            {/* PIG³ */}
+            {pig && (pig.policy || pig.institutions || pig.governance) && (
+              <Section title="PIG³ Analysis">
                 {[
-                  ['Township', ex?.township],
-                  ['Type', ex?.property_type],
-                  ['Price', ex?.price_lakh != null ? `${ex.price_lakh.toLocaleString()} Lakh` : null],
-                  ['Land Size', ex?.land_size],
-                  ['Building', ex?.building_size_sqft != null ? `${ex.building_size_sqft.toLocaleString()} sqft` : null],
-                  ['Bedrooms', ex?.bedrooms?.toString()],
-                  ['Bathrooms', ex?.bathrooms?.toString()],
-                  ['Floors', ex?.floors?.toString()],
-                ].filter(([, v]) => v).map(([label, value]) => (
-                  <div key={label as string} style={{ fontSize: 12, padding: '5px 0', borderBottom: '1px solid #f0f0f0' }}>
-                    <span style={{ color: '#888' }}>{label}  </span>
-                    <strong style={{ color: '#111' }}>{value}</strong>
+                  { label: 'Policy', value: pig.policy },
+                  { label: 'Institutions', value: pig.institutions },
+                  { label: 'Governance', value: pig.governance },
+                ].filter(r => r.value).map((row, i) => (
+                  <div key={row.label} style={{ marginBottom: i < 2 ? 10 : 0 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#888', marginBottom: 4 }}>{row.label}</div>
+                    <p style={{ fontSize: 12, lineHeight: 1.8, margin: 0, color: '#222' }}>{row.value}</p>
                   </div>
                 ))}
-              </div>
-              {ex?.amenities?.length > 0 && (
-                <div style={{ marginTop: 10, fontSize: 12 }}>
-                  <span style={{ color: '#888' }}>Amenities  </span>
-                  <span style={{ color: '#111' }}>{ex.amenities.join(', ')}</span>
-                </div>
-              )}
-            </Section>
-
-            {/* Price analysis */}
-            {pa && (pa.user_price_per_sqft_lakh != null || pa.market_average_per_sqft_lakh != null) && (
-              <Section title="Price Analysis">
-                <div style={{ display: 'flex', gap: 16 }}>
-                  {pa.user_price_per_sqft_lakh != null && (
-                    <div style={{ flex: 1, background: '#f8f9fa', borderRadius: 6, padding: '12px 16px', textAlign: 'center' }}>
-                      <div style={{ fontSize: 18, fontWeight: 800, color: '#111' }}>{pa.user_price_per_sqft_lakh.toFixed(2)}</div>
-                      <div style={{ fontSize: 10, color: '#888', marginTop: 3 }}>lakh / sqft (listing)</div>
-                    </div>
-                  )}
-                  {pa.market_average_per_sqft_lakh != null && (
-                    <div style={{ flex: 1, background: '#f8f9fa', borderRadius: 6, padding: '12px 16px', textAlign: 'center' }}>
-                      <div style={{ fontSize: 18, fontWeight: 800, color: '#111' }}>{pa.market_average_per_sqft_lakh.toFixed(2)}</div>
-                      <div style={{ fontSize: 10, color: '#888', marginTop: 3 }}>lakh / sqft (market avg)</div>
-                    </div>
-                  )}
-                  {pa.position && pa.position !== 'UNKNOWN' && (
-                    <div style={{ flex: 1, background: pa.position === 'BELOW' ? '#dcfce7' : pa.position === 'ABOVE' ? '#fee2e2' : '#fef9c3', borderRadius: 6, padding: '12px 16px', textAlign: 'center' }}>
-                      <div style={{ fontSize: 16, fontWeight: 800, color: positionColor[pa.position] }}>
-                        {pa.delta_percent != null ? `${pa.delta_percent > 0 ? '+' : ''}${pa.delta_percent}%` : '—'}
-                      </div>
-                      <div style={{ fontSize: 10, color: positionColor[pa.position], marginTop: 3 }}>{positionLabel[pa.position]}</div>
-                    </div>
-                  )}
-                </div>
               </Section>
             )}
 
-            {/* Investment reasoning */}
-            {result.investment_potential_reasoning && (
-              <Section title="Investment Assessment">
-                <p style={{ fontSize: 12, lineHeight: 1.9, margin: 0, color: '#222' }}>
-                  {result.investment_potential_reasoning}
-                </p>
-              </Section>
-            )}
-
-            {/* Two-column: strengths + risks */}
-            {(result.potential_strengths?.filter(Boolean).length > 0 || result.potential_risks?.filter(Boolean).length > 0) && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
-                {result.potential_strengths?.filter(Boolean).length > 0 && (
-                  <div>
-                    <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#16a34a', marginBottom: 8, paddingBottom: 4, borderBottom: '1px solid #dcfce7' }}>
-                      Strengths
-                    </div>
-                    {result.potential_strengths.slice(0, 4).map((s, i) => (
-                      <div key={i} style={{ fontSize: 11, margin: '4px 0', lineHeight: 1.7, paddingLeft: 10, position: 'relative' }}>
-                        <span style={{ position: 'absolute', left: 0, color: '#16a34a' }}>▸</span>{s}
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {result.potential_risks?.filter(Boolean).length > 0 && (
-                  <div>
-                    <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#dc2626', marginBottom: 8, paddingBottom: 4, borderBottom: '1px solid #fee2e2' }}>
-                      Risks
-                    </div>
-                    {result.potential_risks.slice(0, 4).map((r, i) => (
-                      <div key={i} style={{ fontSize: 11, margin: '4px 0', lineHeight: 1.7, paddingLeft: 10, position: 'relative' }}>
-                        <span style={{ position: 'absolute', left: 0, color: '#dc2626' }}>▸</span>{r}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Key findings */}
+            {/* Key Findings */}
             {result.key_findings?.filter(Boolean).length > 0 && (
               <Section title="Key Findings">
                 {result.key_findings.slice(0, 5).map((f, i) => (
@@ -273,15 +228,34 @@ export default function PdfDownload({ result }: Props) {
               </Section>
             )}
 
-            {/* Next steps */}
-            {result.suggested_next_steps?.filter(Boolean).length > 0 && (
-              <Section title="Suggested Next Steps">
-                {result.suggested_next_steps.slice(0, 4).map((s, i) => (
+            {/* Red Flags */}
+            {result.red_flags?.filter(Boolean).length > 0 && (
+              <Section title="Red Flags">
+                {result.red_flags.slice(0, 4).map((r, i) => (
+                  <div key={i} style={{ fontSize: 12, margin: '5px 0', lineHeight: 1.8, display: 'flex', gap: 8 }}>
+                    <span style={{ color: '#dc2626', flexShrink: 0 }}>▲</span><span>{r}</span>
+                  </div>
+                ))}
+              </Section>
+            )}
+
+            {/* Next Steps */}
+            {(result.next_steps ?? result.suggested_next_steps)?.filter(Boolean).length > 0 && (
+              <Section title="Next Steps">
+                {(result.next_steps ?? result.suggested_next_steps ?? []).slice(0, 4).map((s, i) => (
                   <div key={i} style={{ fontSize: 12, margin: '5px 0', lineHeight: 1.8, display: 'flex', gap: 8 }}>
                     <span style={{ color: '#555', flexShrink: 0 }}>{i + 1}.</span><span>{s}</span>
                   </div>
                 ))}
               </Section>
+            )}
+
+            {/* Listing Gaps footnote */}
+            {result.listing_gaps && (
+              <div style={{ marginTop: 8, padding: '10px 14px', background: '#f8f9fa', border: '1px solid #e5e7eb', borderRadius: 4 }}>
+                <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', color: '#888', marginBottom: 4 }}>Note — Listing Gaps</div>
+                <p style={{ fontSize: 11, color: '#666', lineHeight: 1.7, margin: 0 }}>{result.listing_gaps}</p>
+              </div>
             )}
 
             {/* Disclaimer */}

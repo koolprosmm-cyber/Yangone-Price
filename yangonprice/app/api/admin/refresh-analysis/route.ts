@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase'
 import { getOpenAI, MAIN_MODEL, buildUserMessage } from '@/lib/openai'
 import { SYSTEM_PROMPT } from '@/lib/systemPrompt'
 import { AnalysisResponse, ComparableRow, MarketDataRow } from '@/lib/types'
-import { computePriceAnalysis, sanitizeAnalysis } from '@/lib/priceUtils'
+import { computePricePosition } from '@/lib/priceUtils'
 import { checkAdminAuth } from '@/lib/adminAuth'
 
 export async function POST(req: NextRequest) {
@@ -49,18 +49,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'AI analysis failed.' }, { status: 502 })
   }
 
-  const modelPA = parsed.price_analysis as Record<string, number | null> | undefined
-  const userPerSqft = typeof modelPA?.user_price_per_sqft_lakh === 'number' ? modelPA.user_price_per_sqft_lakh : null
-  const marketPerSqft = typeof modelPA?.market_average_per_sqft_lakh === 'number' ? modelPA.market_average_per_sqft_lakh : null
-  const { position, delta_percent } = computePriceAnalysis(userPerSqft, marketPerSqft)
-  parsed.price_analysis = { user_price_per_sqft_lakh: userPerSqft, market_average_per_sqft_lakh: marketPerSqft, position, delta_percent }
+  const pricePos = parsed.price_position as Record<string, number | null> | undefined
+  const userPerSqft = typeof pricePos?.user_price_per_sqft_lakh === 'number' ? pricePos.user_price_per_sqft_lakh : null
+  const marketPerSqft = typeof pricePos?.market_avg_per_sqft_lakh === 'number' ? pricePos.market_avg_per_sqft_lakh : null
+  const { position, delta_percent } = computePricePosition(userPerSqft, marketPerSqft)
+  parsed.price_position = { ...(pricePos ?? {}), user_price_per_sqft_lakh: userPerSqft, market_avg_per_sqft_lakh: marketPerSqft, position, delta_percent }
 
-  const result = sanitizeAnalysis(parsed as unknown as AnalysisResponse)
+  const result = parsed as unknown as AnalysisResponse
 
   await supabase.from('market_data').update({
     analysis_json: result,
-    executive_summary_mm: result.investment_potential_reasoning ?? '',
-    analysis_decision: result.decision ?? null,
+    executive_summary_mm: result.market_summary ?? '',
+    analysis_decision: result.verdict ?? null,
     analysis_generated_at: new Date().toISOString(),
   }).eq('id', recordId)
 

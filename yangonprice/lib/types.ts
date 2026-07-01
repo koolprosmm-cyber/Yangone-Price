@@ -1,68 +1,64 @@
-export interface ExtractedData {
-  property_type: string
+export interface ExtractedSignal {
   township: string
-  location: string
+  property_type: string
   price_lakh: number | null
-  building_size_sqft: number | null
-  land_size: string
-  bedrooms: number | null
-  bathrooms: number | null
-  floors: number | null
-  amenities: string[]
-  special_features: string[]
-  missing_fields_note: string
+  size_sqft: number | null
+  price_per_sqft_lakh: number | null
 }
 
-export interface PriceAnalysis {
+export interface PricePosition {
   user_price_per_sqft_lakh: number | null
-  market_average_per_sqft_lakh: number | null
-  // Computed server-side:
-  position: 'BELOW' | 'AVERAGE' | 'ABOVE' | 'UNKNOWN'
+  market_avg_per_sqft_lakh: number | null
+  position: 'ABOVE' | 'BELOW' | 'AT_MARKET' | 'UNKNOWN'
   delta_percent: number | null
+  gap_narrative: string
 }
 
-export interface PigScore {
-  property_completeness: number        // 1-5
-  property_completeness_reason: string
-  market_confidence: number            // 1-5
-  market_confidence_reason: string
-  investment_potential_score: number   // 1-5
-  investment_potential_reason: string
-  risk_level: number                   // 1-5 (5 = highest risk)
-  risk_level_reason: string
-}
-
-export interface EvidenceUsed {
-  from_listing: string[]
-  from_market_database: string[]
-  from_general_knowledge: string[]
-  from_ai_reasoning: string[]
+export interface PigAnalysis {
+  policy: string
+  institutions: string
+  governance: string
 }
 
 export interface AnalysisResponse {
-  extracted_data: ExtractedData
-  price_analysis: PriceAnalysis
-  decision: 'BUY' | 'WAIT' | 'AVOID' | 'COMPETITIVE' | 'OVERPRICED' | 'UNDERPRICED'
-  mode?: 'buyer' | 'seller'
-  investment_potential: 'Strong Potential' | 'Moderate Potential' | 'Limited Potential'
-  // Report sections
-  market_intelligence: string
-  property_intelligence: string
-  pig_score: PigScore
-  evidence_used: EvidenceUsed
-  // Legacy fields (kept for compatibility)
-  investment_potential_reasoning: string
+  // Core signal extracted from listing
+  extracted_signal: ExtractedSignal
+  // Also support legacy field name from old analyses
+  extracted_data?: {
+    township?: string
+    property_type?: string
+    price_lakh?: number | null
+    building_size_sqft?: number | null
+  }
+
+  verdict: 'BUY' | 'WAIT' | 'AVOID'
+  verdict_reason: string
+
+  market_summary: string
+  price_position: PricePosition
+  pig_analysis: PigAnalysis
+
   key_findings: string[]
-  market_observations: string
-  potential_strengths: string[]
-  potential_risks: string[]
-  missing_information: string[]
-  questions_to_verify: string[]
-  suggested_next_steps: string[]
+  red_flags: string[]
+  listing_gaps: string
+
+  next_steps: string[]
+
+  investment_potential: 'Strong Potential' | 'Moderate Potential' | 'Limited Potential'
   confidence: 'High' | 'Medium' | 'Low'
-  confidence_explanation: string
-  method_note: string
+  confidence_reason: string
+
+  // Server-added metadata
+  mode?: 'buyer' | 'seller'
   trust_metadata?: ReportTrustMetadata
+
+  // Legacy fields — kept so old saved analyses still render
+  decision?: string
+  suggested_next_steps?: string[]
+  potential_risks?: string[]
+  market_intelligence?: string
+  market_observations?: string
+  confidence_explanation?: string
 }
 
 export interface ReportTrustMetadata {

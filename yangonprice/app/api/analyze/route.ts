@@ -3,9 +3,7 @@ import { getAIProvider } from '@/lib/ai-provider'
 import { buildUserMessage } from '@/lib/openai'
 import { supabase } from '@/lib/supabase'
 import { SYSTEM_PROMPT } from '@/lib/systemPrompt'
-import { SELLER_PROMPT } from '@/lib/sellerPrompt'
 import { AnalysisResponse, ComparableRow, MarketDataRow } from '@/lib/types'
-import { computePriceAnalysis, sanitizeAnalysis } from '@/lib/priceUtils'
 import { getRankedEvidence } from '@/lib/knowledge-retrieval'
 
 export const maxDuration = 30
@@ -25,19 +23,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Please paste a property listing.' }, { status: 400 })
   }
 
-  // Quick township/type extraction from listing text for evidence ranking
   const townshipGuess = guessTownship(listingText)
   const typeGuess = guessPropertyType(listingText)
 
-  // Get ranked evidence from knowledge base
-  let evidence: { comparables: ComparableRow[]; marketData: MarketDataRow[]; kbVersion: number; dataFreshnessSummary: string } = { comparables: [], marketData: [], kbVersion: 1, dataFreshnessSummary: 'No data' }
+  let evidence: { comparables: ComparableRow[]; marketData: MarketDataRow[]; kbVersion: number; dataFreshnessSummary: string } = {
+    comparables: [], marketData: [], kbVersion: 1, dataFreshnessSummary: 'No data'
+  }
   try {
     evidence = await getRankedEvidence(townshipGuess, typeGuess)
   } catch { }
 
   const { comparables, marketData, kbVersion, dataFreshnessSummary } = evidence
   const provider = getAIProvider()
-  const systemPrompt = mode === 'seller' ? SELLER_PROMPT : SYSTEM_PROMPT
 
   console.log('[analyze] comparables:', comparables.length, 'marketData:', marketData.length, 'kb:', kbVersion)
 
@@ -47,7 +44,7 @@ export async function POST(req: NextRequest) {
       model: provider.model,
       response_format: { type: 'json_object' },
       messages: [
-        { role: 'system', content: systemPrompt },
+        { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: buildUserMessage(listingText, comparables, marketData) },
       ],
       temperature: 0,
@@ -66,24 +63,37 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unable to generate analysis. Please try again.' }, { status: 502 })
   }
 
-  const modelPA = parsed.price_analysis as Record<string, number | null> | undefined
-  const userPerSqft = modelPA?.user_price_per_sqft_lakh ?? null
-  const marketPerSqft = modelPA?.market_average_per_sqft_lakh ?? null
-  const { position, delta_percent } = computePriceAnalysis(
-    typeof userPerSqft === 'number' ? userPerSqft : null,
-    typeof marketPerSqft === 'number' ? marketPerSqft : null,
-  )
-  parsed.price_analysis = { user_price_per_sqft_lakh: userPerSqft, market_average_per_sqft_lakh: marketPerSqft, position, delta_percent }
-  parsed.mode = mode
+  // Server-side price position — override whatever AI returned
+  const pricePos = parsed.price_position as Record<string, unknown> | undefined
+  const userPerSqft = typeof pricePos?.user_price_per_sqft_lakh === 'number' ? pricePos.user_price_per_sqft_lakh : null
+  const marketPerSqft = typeof pricePos?.market_avg_per_sqft_lakh === 'number' ? pricePos.market_avg_per_sqft_lakh : null
 
-  // Server-side decision override — prevents AI contradicting price math
-  if (mode === 'buyer' && typeof userPerSqft === 'number' && typeof marketPerSqft === 'number') {
-    if (position === 'ABOVE') parsed.decision = 'OVERPRICED'
-    else if (position === 'BELOW') parsed.decision = 'GOOD VALUE'
-    else parsed.decision = 'FAIR PRICE'
+  let position: 'ABOVE' | 'BELOW' | 'AT_MARKET' | 'UNKNOWN' = 'UNKNOWN'
+  let delta_percent: number | null = null
+
+  if (userPerSqft !== null && marketPerSqft !== null && marketPerSqft > 0) {
+    delta_percent = Math.round(((userPerSqft - marketPerSqft) / marketPerSqft) * 100)
+    if (delta_percent > 5) position = 'ABOVE'
+    else if (delta_percent < -5) position = 'BELOW'
+    else position = 'AT_MARKET'
   }
 
-  // Attach trust metadata
+  parsed.price_position = {
+    ...(pricePos ?? {}),
+    user_price_per_sqft_lakh: userPerSqft,
+    market_avg_per_sqft_lakh: marketPerSqft,
+    position,
+    delta_percent,
+  }
+
+  // Verdict override when price math is available
+  if (mode === 'buyer' && position !== 'UNKNOWN') {
+    if (position === 'ABOVE') parsed.verdict = 'WAIT'
+    else if (position === 'BELOW') parsed.verdict = 'BUY'
+    else parsed.verdict = 'BUY'
+  }
+
+  parsed.mode = mode
   parsed.trust_metadata = {
     generatedAt: new Date().toISOString(),
     aiModel: provider.providerName,
@@ -91,20 +101,19 @@ export async function POST(req: NextRequest) {
     dataFreshnessSummary,
   }
 
-  const response = sanitizeAnalysis(parsed as unknown as AnalysisResponse)
+  const response = parsed as unknown as AnalysisResponse
 
-  // Save to analyses table
   try {
     await supabase.from('analyses').insert({
       raw_input: listingText,
-      decision: response.decision,
-      property_summary: response.market_observations,
-      considerations: response.investment_potential_reasoning,
-      risk_assessment: response.potential_risks,
-      recommendation: response.suggested_next_steps,
+      decision: response.verdict,
+      property_summary: response.market_summary,
+      considerations: response.investment_potential,
+      risk_assessment: JSON.stringify(response.red_flags),
+      recommendation: JSON.stringify(response.next_steps),
       confidence: response.confidence,
-      extracted_data: response.extracted_data,
-      price_analysis: response.price_analysis,
+      extracted_data: response.extracted_signal,
+      price_analysis: response.price_position,
       kb_version: kbVersion,
       ai_model: provider.providerName,
     })
@@ -113,7 +122,6 @@ export async function POST(req: NextRequest) {
   return NextResponse.json(response)
 }
 
-// Fast heuristic to guess township from listing text for evidence pre-ranking
 function guessTownship(text: string): string {
   const townships = [
     'စမ်းချောင်း', 'ကမာရွတ်', 'မင်္ဂလာတောင်ညွန့်', 'ဗိုလ်တထောင်', 'လသာ',
