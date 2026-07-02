@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   let rawJson: string
   try {
     const completion = await openaiClient.chat.completions.create({
-      model: 'gpt-4o',
+      model: 'openai/gpt-4o',
       response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
